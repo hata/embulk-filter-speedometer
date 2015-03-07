@@ -81,7 +81,6 @@ public class SpeedometerFilterPlugin
         private final ImmutableMap<Column, TimestampFormatter> timestampMap;
         private final PageOutput pageOutput;
         private final PageReader pageReader;
-        // private final PluginTask task;
         private final BufferAllocator allocator;
         private final int delimiterLength;
         private final int recordPaddingSize;
@@ -93,7 +92,6 @@ public class SpeedometerFilterPlugin
             this.allocator = task.getBufferAllocator();
             this.delimiterLength = task.getDelimiter().length();
             this.recordPaddingSize = task.getRecordPaddingSize();
-            // this.task = task;
             pageReader = new PageReader(schema);
             timestampMap = buildTimestampFormatterMap(task, schema);
         }
@@ -104,8 +102,9 @@ public class SpeedometerFilterPlugin
                 ColumnVisitorImpl visitor = new ColumnVisitorImpl(pageBuilder);
                 pageReader.setPage(page);
                 while (pageReader.nextRecord()) {
+                    visitor.speedMonitorStartRecord();
                     schema.visitColumns(visitor);
-                    speedMonitorEndRecord();
+                    visitor.speedMonitorEndRecord();
                     pageBuilder.addRecord();
                 }
                 pageBuilder.finish();
@@ -154,54 +153,10 @@ public class SpeedometerFilterPlugin
             return builder.build();
         }
 
-        // For null column
-        private void speedMonitor(Column column) {
-            speedMonitorForDelimiter(column);
-        }
-
-        private boolean speedMonitor(Column column, boolean b) {
-            speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(System.currentTimeMillis(), b ? TRUE_LENGTH : FALSE_LENGTH);
-            return b;
-        }
-
-        private long speedMonitor(Column column, long l) {
-            speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(System.currentTimeMillis(), String.valueOf(l).length());
-            return l;
-        }
-
-        private double speedMonitor(Column column, double d) {
-            speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(System.currentTimeMillis(), String.valueOf(d).length());
-            return d;
-        }
-
-        private String speedMonitor(Column column, String s) {
-            speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(System.currentTimeMillis(), s.length());
-            return s;
-        }
-
-        private Timestamp speedMonitor(Column column, Timestamp t) {
-            speedMonitorForDelimiter(column);
-            TimestampFormatter formatter = timestampMap.get(column);
-            controller.checkSpeedLimit(System.currentTimeMillis(), formatter.format(t).length());
-            return t;
-        }
-
-        private void speedMonitorForDelimiter(Column column) {
-            if (column.getIndex() > 0) {
-                controller.checkSpeedLimit(System.currentTimeMillis(), delimiterLength);
-            }
-        }
-
-        private void speedMonitorEndRecord() {
-            controller.checkSpeedLimit(System.currentTimeMillis(), recordPaddingSize);
-        }
-
-        private class ColumnVisitorImpl implements ColumnVisitor {
+        class ColumnVisitorImpl implements ColumnVisitor {
             private final PageBuilder pageBuilder;
+            private long startRecordTime;
+
             ColumnVisitorImpl(PageBuilder pageBuilder) {
                 this.pageBuilder = pageBuilder;
             }
@@ -253,6 +208,56 @@ public class SpeedometerFilterPlugin
                     pageBuilder.setNull(column);
                 } else {
                     pageBuilder.setTimestamp(column, speedMonitor(column, pageReader.getTimestamp(column)));
+                }
+            }
+
+            private void speedMonitorStartRecord() {
+                startRecordTime = System.currentTimeMillis();
+            }
+
+            private void speedMonitorEndRecord() {
+                controller.checkSpeedLimit(startRecordTime, recordPaddingSize);
+            }
+
+            // For null column
+            private void speedMonitor(Column column) {
+                speedMonitorForDelimiter(column);
+            }
+
+            private boolean speedMonitor(Column column, boolean b) {
+                speedMonitorForDelimiter(column);
+                controller.checkSpeedLimit(startRecordTime, b ? TRUE_LENGTH : FALSE_LENGTH);
+                return b;
+            }
+
+            private long speedMonitor(Column column, long l) {
+                speedMonitorForDelimiter(column);
+                controller.checkSpeedLimit(startRecordTime, String.valueOf(l).length());
+                return l;
+            }
+
+            private double speedMonitor(Column column, double d) {
+                speedMonitorForDelimiter(column);
+                controller.checkSpeedLimit(startRecordTime, String.valueOf(d).length());
+                return d;
+            }
+
+            private String speedMonitor(Column column, String s) {
+                speedMonitorForDelimiter(column);
+                controller.checkSpeedLimit(startRecordTime, s.length());
+                return s;
+            }
+
+            private Timestamp speedMonitor(Column column, Timestamp t) {
+                speedMonitorForDelimiter(column);
+                TimestampFormatter formatter = timestampMap.get(column);
+                controller.checkSpeedLimit(startRecordTime, formatter.format(t).length());
+                return t;
+            }
+
+            private void speedMonitorForDelimiter(Column column) {
+                if (column.getIndex() > 0) {
+                    controller.checkSpeedLimit(startRecordTime, delimiterLength);
                 }
             }
         }

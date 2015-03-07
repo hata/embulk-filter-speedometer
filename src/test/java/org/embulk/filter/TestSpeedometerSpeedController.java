@@ -7,8 +7,6 @@ import mockit.NonStrictExpectations;
 import mockit.Verifications;
 
 import org.embulk.filter.SpeedometerFilterPlugin.PluginTask;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 public class TestSpeedometerSpeedController {
@@ -19,15 +17,6 @@ public class TestSpeedometerSpeedController {
     PluginTask task;
 
     SpeedometerSpeedController controller;
-
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        controller = null;
-    }
 
     @Test
     public void testSpeedometerSpeedController() {
