@@ -11,7 +11,6 @@ import org.embulk.config.TaskSource;
 import org.embulk.spi.BufferAllocator;
 import org.embulk.spi.Column;
 import org.embulk.spi.ColumnVisitor;
-import org.embulk.spi.Exec;
 import org.embulk.spi.FilterPlugin;
 import org.embulk.spi.Page;
 import org.embulk.spi.PageBuilder;
@@ -21,7 +20,6 @@ import org.embulk.spi.Schema;
 import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampFormatter;
 import org.embulk.spi.type.TimestampType;
-import org.slf4j.Logger;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -38,7 +36,7 @@ public class SpeedometerFilterPlugin
         @ConfigDefault("0")
         @Min(0)
         public long getSpeedLimit();
-        
+
         @Config("max_sleep_millisec")
         @ConfigDefault("1000")
         public int getMaxSleepMillisec();
@@ -52,7 +50,7 @@ public class SpeedometerFilterPlugin
         public int getRecordPaddingSize();
 
         @Config("log_interval_seconds")
-        @ConfigDefault("60")
+        @ConfigDefault("10")
         public int getLogIntervalSeconds();
 
         @ConfigInject
@@ -82,79 +80,31 @@ public class SpeedometerFilterPlugin
         private final Schema schema;
         private final ImmutableMap<Column, TimestampFormatter> timestampMap;
         private final PageOutput pageOutput;
-        private final PageReader reader;
-        private final PluginTask task;
-        private final Logger log;
-        
+        private final PageReader pageReader;
+        // private final PluginTask task;
+        private final BufferAllocator allocator;
+        private final int delimiterLength;
+        private final int recordPaddingSize;
+
         SpeedControlPageOutput(PluginTask task, Schema schema, PageOutput pageOutput) {
-            this.controller = new SpeedometerMultiSpeedController(task);
+            this.controller = new SpeedometerSpeedController(task, SpeedometerSpeedAggregator.getInstance());
             this.schema = schema;
             this.pageOutput = pageOutput;
-            this.task = task;
-            reader = new PageReader(schema);
-            timestampMap = buildTimestampFormatterMap(schema);
-            this.log = Exec.getLogger(SpeedometerFilterPlugin.class);
-            
-            this.controller.start();
+            this.allocator = task.getBufferAllocator();
+            this.delimiterLength = task.getDelimiter().length();
+            this.recordPaddingSize = task.getRecordPaddingSize();
+            // this.task = task;
+            pageReader = new PageReader(schema);
+            timestampMap = buildTimestampFormatterMap(task, schema);
         }
 
         @Override
         public void add(Page page) {
-            try (final PageBuilder pageBuilder = new PageBuilder(task.getBufferAllocator(), schema, pageOutput)) {
-                reader.setPage(page);
-                while (reader.nextRecord()) {
-                    // TODO: This should change for performance.
-                    schema.visitColumns(new ColumnVisitor() {
-                        @Override
-                        public void booleanColumn(Column column) {
-                            if (reader.isNull(column)) {
-                                speedMonitor(column);
-                                pageBuilder.setNull(column);
-                            } else {
-                                pageBuilder.setBoolean(column, speedMonitor(column, reader.getBoolean(column)));
-                            }
-                        }
-
-                        @Override
-                        public void longColumn(Column column) {
-                            if (reader.isNull(column)) {
-                                speedMonitor(column);
-                                pageBuilder.setNull(column);
-                            } else {
-                                pageBuilder.setLong(column, speedMonitor(column, reader.getLong(column)));
-                            }
-                        }
-
-                        @Override
-                        public void doubleColumn(Column column) {
-                            if (reader.isNull(column)) {
-                                speedMonitor(column);
-                                pageBuilder.setNull(column);
-                            } else {
-                                pageBuilder.setDouble(column, speedMonitor(column, reader.getDouble(column)));
-                            }
-                        }
-
-                        @Override
-                        public void stringColumn(Column column) {
-                            if (reader.isNull(column)) {
-                                speedMonitor(column);
-                                pageBuilder.setNull(column);
-                            } else {
-                                pageBuilder.setString(column, speedMonitor(column, reader.getString(column)));
-                            }
-                        }
-
-                        @Override
-                        public void timestampColumn(Column column) {
-                            if (reader.isNull(column)) {
-                                speedMonitor(column);
-                                pageBuilder.setNull(column);
-                            } else {
-                                pageBuilder.setTimestamp(column, speedMonitor(column, reader.getTimestamp(column)));
-                            }
-                        }
-                    });
+            try (final PageBuilder pageBuilder = new PageBuilder(allocator, schema, pageOutput)) {
+                ColumnVisitorImpl visitor = new ColumnVisitorImpl(pageBuilder);
+                pageReader.setPage(page);
+                while (pageReader.nextRecord()) {
+                    schema.visitColumns(visitor);
                     speedMonitorEndRecord();
                     pageBuilder.addRecord();
                 }
@@ -170,11 +120,11 @@ public class SpeedometerFilterPlugin
         @Override
         public void close() {
             controller.stop();
-            reader.close();
+            pageReader.close();
             pageOutput.close();
         }
 
-        private ImmutableMap<Column, TimestampFormatter> buildTimestampFormatterMap(Schema schema) {
+        private ImmutableMap<Column, TimestampFormatter> buildTimestampFormatterMap(final PluginTask task, Schema schema) {
             final ImmutableMap.Builder<Column, TimestampFormatter> builder = new ImmutableMap.Builder<>();
 
             schema.visitColumns(new ColumnVisitor() {
@@ -211,43 +161,100 @@ public class SpeedometerFilterPlugin
 
         private boolean speedMonitor(Column column, boolean b) {
             speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(b ? TRUE_LENGTH : FALSE_LENGTH);
+            controller.checkSpeedLimit(System.currentTimeMillis(), b ? TRUE_LENGTH : FALSE_LENGTH);
             return b;
         }
 
         private long speedMonitor(Column column, long l) {
             speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(String.valueOf(l).length());
+            controller.checkSpeedLimit(System.currentTimeMillis(), String.valueOf(l).length());
             return l;
         }
 
         private double speedMonitor(Column column, double d) {
             speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(String.valueOf(d).length());
+            controller.checkSpeedLimit(System.currentTimeMillis(), String.valueOf(d).length());
             return d;
         }
 
         private String speedMonitor(Column column, String s) {
             speedMonitorForDelimiter(column);
-            controller.checkSpeedLimit(s.length());
+            controller.checkSpeedLimit(System.currentTimeMillis(), s.length());
             return s;
         }
 
         private Timestamp speedMonitor(Column column, Timestamp t) {
             speedMonitorForDelimiter(column);
             TimestampFormatter formatter = timestampMap.get(column);
-            controller.checkSpeedLimit(formatter.format(t).length());
+            controller.checkSpeedLimit(System.currentTimeMillis(), formatter.format(t).length());
             return t;
         }
 
         private void speedMonitorForDelimiter(Column column) {
             if (column.getIndex() > 0) {
-                controller.checkSpeedLimit(task.getDelimiter().length());
+                controller.checkSpeedLimit(System.currentTimeMillis(), delimiterLength);
             }
         }
-        
+
         private void speedMonitorEndRecord() {
-            controller.checkSpeedLimit(task.getRecordPaddingSize());
+            controller.checkSpeedLimit(System.currentTimeMillis(), recordPaddingSize);
+        }
+
+        private class ColumnVisitorImpl implements ColumnVisitor {
+            private final PageBuilder pageBuilder;
+            ColumnVisitorImpl(PageBuilder pageBuilder) {
+                this.pageBuilder = pageBuilder;
+            }
+
+            @Override
+            public void booleanColumn(Column column) {
+                if (pageReader.isNull(column)) {
+                    speedMonitor(column);
+                    pageBuilder.setNull(column);
+                } else {
+                    pageBuilder.setBoolean(column, speedMonitor(column, pageReader.getBoolean(column)));
+                }
+            }
+
+            @Override
+            public void longColumn(Column column) {
+                if (pageReader.isNull(column)) {
+                    speedMonitor(column);
+                    pageBuilder.setNull(column);
+                } else {
+                    pageBuilder.setLong(column, speedMonitor(column, pageReader.getLong(column)));
+                }
+            }
+
+            @Override
+            public void doubleColumn(Column column) {
+                if (pageReader.isNull(column)) {
+                    speedMonitor(column);
+                    pageBuilder.setNull(column);
+                } else {
+                    pageBuilder.setDouble(column, speedMonitor(column, pageReader.getDouble(column)));
+                }
+            }
+
+            @Override
+            public void stringColumn(Column column) {
+                if (pageReader.isNull(column)) {
+                    speedMonitor(column);
+                    pageBuilder.setNull(column);
+                } else {
+                    pageBuilder.setString(column, speedMonitor(column, pageReader.getString(column)));
+                }
+            }
+
+            @Override
+            public void timestampColumn(Column column) {
+                if (pageReader.isNull(column)) {
+                    speedMonitor(column);
+                    pageBuilder.setNull(column);
+                } else {
+                    pageBuilder.setTimestamp(column, speedMonitor(column, pageReader.getTimestamp(column)));
+                }
+            }
         }
     }
 }

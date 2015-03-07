@@ -4,6 +4,10 @@ plugins {
     id "java"
 }
 import com.github.jrubygradle.JRubyExec
+
+sourceCompatibility = '1.7'
+targetCompatibility = '1.7'
+
 repositories {
     mavenCentral()
     jcenter()
@@ -15,9 +19,10 @@ configurations {
 version = "0.1.0"
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.5.0"
-    provided "org.embulk:embulk-core:0.5.0"
+    compile  "org.embulk:embulk-core:0.5.0+"
+    provided "org.embulk:embulk-core:0.5.0+"
     // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
+    testCompile "org.jmockit:jmockit:1.15+"
     testCompile "junit:junit:4.+"
 }
 
