@@ -59,9 +59,9 @@ filters:
 2015-03-07 18:29:11.410 -0800 [INFO] (task-0008): {speedometer: {active: 5, total: 36.1mb, sec: 20.0, speed: 2.7mb/s}}
 ```
 
-- **active**: running thread count
+- **active**: running threads
 - **total**: processed bytes. This size is calculated based on text data like csv. e.g., boolean value is 4 bytes(true) or 5 bytes(false). The default configuration set delimiter as 1 byte and padding for each record as 1 byte.
-- **sec**: This is elapsed time by second.
+- **sec**: elapsed time.
 - **speed**: processing bytes per second.
 
 ## Build
