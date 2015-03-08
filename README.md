@@ -15,7 +15,7 @@ Write log message of processed bytes and throughput periodically.
 
 ## Example of Configuration
 
-- Use default parameters.
+- Use default parameters. Log message is output every 10 seconds.
 
 ```yaml
 filters:
@@ -30,7 +30,7 @@ filters:
     log_interval_seconds: 20
 ```
 
-- If it is required to set a speed limit for throughput in filter, then set **speed_limit** parameter as bytes per second. If it is not required, then set 0(default). The following example is to set 250kbytes per second. This is all thread's total speed limit.
+- If it is required to set a speed limit for throughput in filter, then set bytes per second to **speed_limit** parameter. If it is not required, then set 0(default). The following example is to set 250kbytes per second. This is all thread's total speed limit.
 
 ```yaml
 filters:
@@ -60,9 +60,9 @@ filters:
 ```
 
 - **active**: running threads
-- **total**: processed bytes. This size is calculated based on text data like csv. e.g., boolean value is 4 bytes(true) or 5 bytes(false). The default configuration set delimiter as 1 byte and padding for each record as 1 byte.
+- **total**: processed bytes. This size is calculated based on text data like csv. For example, boolean value is 4 bytes(true) or 5 bytes(false). The default configuration set a byte for delimiter and a byte padding for each record.
 - **sec**: elapsed time.
-- **speed**: processing bytes per second.
+- **speed**: bytes per second.
 
 ## Build
 
