@@ -1,6 +1,6 @@
 # Speedometer Filter Plugin for Embulk
 
-Write log message for processed bytes and speed periodically.
+Write log message of processed bytes and throughput periodically.
 
 ## Overview
 
@@ -30,7 +30,7 @@ filters:
     log_interval_seconds: 20
 ```
 
-- If it is required to set maximum processing speed, then set **speed_limit** parameter. If it is not required, then set 0(default). The following example is to set 250kbytes per second. This is all thread's total speed limit.
+- If it is required to set a speed limit for throughput in filter, then set **speed_limit** parameter as bytes per second. If it is not required, then set 0(default). The following example is to set 250kbytes per second. This is all thread's total speed limit.
 
 ```yaml
 filters:
@@ -69,5 +69,9 @@ filters:
 ```
 $ ./gradlew gem
 ```
+
+## Note
+
+The shown data is caled based on text data size while using this filter plugin. So, the data is not the same data as read bytes and write bytes n input and output plugins.
 
 
