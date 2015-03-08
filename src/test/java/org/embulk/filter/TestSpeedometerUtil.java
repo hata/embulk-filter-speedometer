@@ -8,13 +8,19 @@ public class TestSpeedometerUtil {
 
     @Test
     public void testToNumberText() {
-        assertEquals("Verify 0 bytes",  " 0.0B", SpeedometerUtil.toNumberText(0));
-        assertEquals("Verify 0 bytes", " 1.0KB", SpeedometerUtil.toNumberText(1000L));
-        assertEquals("Verify 0 bytes", " 1.0MB", SpeedometerUtil.toNumberText(1000L * 1000));
-        assertEquals("Verify 0 bytes", " 1.0GB", SpeedometerUtil.toNumberText(1000L * 1000 * 1000));
-        assertEquals("Verify 0 bytes", " 1.0TB", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000));
-        assertEquals("Verify 0 bytes", " 1.0PB", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000));
-        assertEquals("Verify 0 bytes", " 1.0EB", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000 * 1000));
+        assertEquals("Verify 0 bytes",  "0.0b", SpeedometerUtil.toNumberText(0));
+        assertEquals("Verify 0 bytes",  "100b", SpeedometerUtil.toNumberText(100));
+        assertEquals("Verify 0 bytes", "1.0kb", SpeedometerUtil.toNumberText(1000L));
+        assertEquals("Verify 0 bytes", "100kb", SpeedometerUtil.toNumberText(1000L * 100));
+        assertEquals("Verify 0 bytes", "1.0mb", SpeedometerUtil.toNumberText(1000L * 1000));
+        assertEquals("Verify 0 bytes", "100mb", SpeedometerUtil.toNumberText(1000L * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0gb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100gb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0tb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100tb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0pb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100pb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0eb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000 * 1000));
     }
 
     @Test
