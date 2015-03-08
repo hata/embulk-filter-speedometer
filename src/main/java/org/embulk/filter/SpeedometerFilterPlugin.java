@@ -26,8 +26,8 @@ import com.google.common.collect.ImmutableMap;
 public class SpeedometerFilterPlugin
         implements FilterPlugin
 {
-    private static final int TRUE_LENGTH = "true".length();
-    private static final int FALSE_LENGTH = "false".length();
+    private static final int TRUE_LENGTH = Boolean.toString(true).length();
+    private static final int FALSE_LENGTH = Boolean.toString(false).length();
 
     public interface PluginTask
             extends Task,  TimestampFormatter.FormatterTask
@@ -145,7 +145,7 @@ public class SpeedometerFilterPlugin
                         TimestampType tt = (TimestampType) column.getType();
                         builder.put(column, new TimestampFormatter(tt.getFormat(), task));
                     } else {
-                        throw new RuntimeException("timestamp should be TimestampType.");
+                        throw new RuntimeException("Timestamp should be TimestampType.");
                     }
                 }
             });

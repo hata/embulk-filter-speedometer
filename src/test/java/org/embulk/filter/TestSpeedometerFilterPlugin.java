@@ -8,6 +8,7 @@ import org.embulk.config.ConfigSource;
 import org.embulk.config.TaskSource;
 import org.embulk.filter.SpeedometerFilterPlugin.PluginTask;
 import org.embulk.spi.ColumnVisitor;
+import org.embulk.spi.Exec;
 import org.embulk.spi.FilterPlugin;
 import org.embulk.spi.Page;
 import org.embulk.spi.PageBuilder;
@@ -18,6 +19,9 @@ import org.junit.Test;
 
 public class TestSpeedometerFilterPlugin
 {
+    @Mocked
+    Exec exec;
+
     @Mocked
     ConfigSource config;
 

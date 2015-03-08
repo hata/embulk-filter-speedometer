@@ -28,6 +28,7 @@ class SpeedometerSpeedAggregator {
     }
 
     public SpeedometerSpeedAggregator() {
+        showLogMessage(activeControllerCount.get(), 0, 0, 0);
     }
 
     public void startController(SpeedometerSpeedController controller, long nowTime) {
@@ -116,11 +117,7 @@ class SpeedometerSpeedAggregator {
         long timeDelta = nowTime - globalStartTime.get();
         timeDelta = timeDelta > 0 ? timeDelta : 1;
 
-        Logger logger = getLogger();
-        if (logger != null) {
-            logger.info(String.format("speedometer active:%d  filter: %d bytes / %d seconds ( %d bytes/sec)",
-                    activeControllerCount.get(), currentTotalSize, timeDelta/1000, currentBytesPerSec));
-        }
+        showLogMessage(activeControllerCount.get(), currentTotalSize, timeDelta, currentBytesPerSec);
     }
 
     private void showOverallMessage() {
@@ -128,9 +125,17 @@ class SpeedometerSpeedAggregator {
         timeDelta = timeDelta > 0 ? timeDelta : 1;
         long bytesPerSec = (globalTotalBytes.get() * 1000) / timeDelta;
 
+        showLogMessage(activeControllerCount.get(), globalTotalBytes.get(), timeDelta, bytesPerSec);
+    }
+
+    private void showLogMessage(int activeThreads, long totalBytes, long timeMilliSec, long bytesPerSec) {
         Logger logger = getLogger();
         if (logger != null) {
-            logger.info(String.format("speedometer overall %d bytes / %d seconds ( %d bytes/sec)", globalTotalBytes.get(), timeDelta/1000, bytesPerSec));
+            logger.info(String.format("{speedometer: {active: %d, total: %s, sec: %s, speed: %s/s}}",
+                    activeThreads,
+                    SpeedometerUtil.toNumberText(totalBytes),
+                    SpeedometerUtil.toTimeText(timeMilliSec),
+                    SpeedometerUtil.toNumberText(bytesPerSec)));
         }
     }
 }

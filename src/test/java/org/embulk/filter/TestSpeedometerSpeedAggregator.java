@@ -67,7 +67,7 @@ public class TestSpeedometerSpeedAggregator {
         aggregator.stopController(controller);
 
         new Verifications() {{
-            logger.info(withAny("Overall message.")); times = 1;
+            logger.info(withAny("Overall message.")); times = 2;
         }};
    }
 
