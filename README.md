@@ -1,25 +1,68 @@
-# Speedometer filter plugin for Embulk
+# Speedometer Filter Plugin for Embulk
 
-TODO: Write short description here and build.gradle file.
+Write log message for processed bytes and speed periodically.
 
 ## Overview
 
-* **Plugin type**: filter
+- **Plugin type**: filter
 
 ## Configuration
 
-- **property1**: description (string, required)
-- **property2**: description (integer, default: default-value)
+- **log_interval_seconds**: Interval seconds to write log message periodically. (integer, optional, default: 10). If this value is set to 0, then interval message is not shown. It only show message when there is no active thread.
+- **speed_limit**: Set maximum processing size per second. If 0 is set, then no limit. (integer, optional, default: 0)
+- **delimiter**: Delimiter text to calculate delimiter length. (string, optional, default: ",")
+- **record_padding_size**: Additional byte size for each record like a return code length. (integer, optional, default: 1)
 
-## Example
+## Example of Configuration
+
+- Use default parameters.
 
 ```yaml
 filters:
   - type: speedometer
-    property1: example1
-    property2: example2
 ```
 
+- Change log message interval from 10 seconds(default) to 20 seconds.
+
+```yaml
+filters:
+  - type: speedometer
+    log_interval_seconds: 20
+```
+
+- If it is required to set maximum processing speed, then set **speed_limit** parameter. If it is not required, then set 0(default). The following example is to set 250kbytes per second. This is all thread's total speed limit.
+
+```yaml
+filters:
+  - type: speedometer
+    log_interval_seconds: 20
+    speed_limit: 250000
+```
+
+- If it is required to change delimiter size and record padding size, then set **delimiter** and **record_padding_size** . Set text for **delimiter** to calculate length. Set integer to **record_padding_size** to add a length for each record. It is like return code length for each line.
+
+```yaml
+filters:
+  - type: speedometer
+    log_interval_seconds: 20
+    speed_limit: 250000
+    delimiter: ", "
+    record_padding_size: 0
+```
+
+## Sample Log Message
+
+```
+2015-03-07 18:28:51.208 -0800 [INFO] (task-0007): {speedometer: {active: 0, total: 0.0b, sec: 0.00, speed: 0.0b/s}}
+2015-03-07 18:28:51.397 -0800 [INFO] (task-0000): {speedometer: {active: 0, total: 144b, sec: 0.00, speed: 144kb/s}}
+2015-03-07 18:29:01.401 -0800 [INFO] (task-0002): {speedometer: {active: 5, total: 9.2mb, sec: 10.0, speed: 999kb/s}}
+2015-03-07 18:29:11.410 -0800 [INFO] (task-0008): {speedometer: {active: 5, total: 36.1mb, sec: 20.0, speed: 2.7mb/s}}
+```
+
+- **active**: running thread count
+- **total**: processed bytes. This size is calculated based on text data like csv. e.g., boolean value is 4 bytes(true) or 5 bytes(false). The default configuration set delimiter as 1 byte and padding for each record as 1 byte.
+- **sec**: This is elapsed time by second.
+- **speed**: processing bytes per second.
 
 ## Build
 

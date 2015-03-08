@@ -45,10 +45,10 @@ Gem::Specification.new do |spec|
   spec.version       = "${project.version}"
   spec.authors       = ["Hiroki Ata"]
   spec.summary       = %[Speedometer filter plugin for Embulk]
-  spec.description   = %["Speedometer"]
+  spec.description   = %["Log processed bytes and processing speed periodically"]
   spec.email         = ["hiroki.ata@gmail.com"]
   spec.licenses      = ["MIT"]
-  # TODO set this: spec.homepage      = "https://github.com/hiroki.ata/embulk-filter-speedometer"
+  spec.homepage      = "https://github.com/hata/embulk-filter-speedometer"
 
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")
