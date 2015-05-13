@@ -43,9 +43,9 @@ task gemspec << { file("build/gemspec").write($/
 Gem::Specification.new do |spec|
   spec.name          = "${project.name}"
   spec.version       = "${project.version}"
-  spec.authors       = ["Hiroki Ata"]
+  spec.authors       = ["hata"]
   spec.summary       = %[Speedometer filter plugin for Embulk]
-  spec.description   = %["Write log message of processed bytes and throughput periodically."]
+  spec.description   = %[Write log message of processed bytes and throughput periodically.]
   spec.email         = ["hiroki.ata@gmail.com"]
   spec.licenses      = ["MIT"]
   spec.homepage      = "https://github.com/hata/embulk-filter-speedometer"
