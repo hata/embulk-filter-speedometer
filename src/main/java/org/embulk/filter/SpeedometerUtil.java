@@ -1,6 +1,7 @@
 package org.embulk.filter;
 
 public class SpeedometerUtil {
+    private static final int MIN_LENGTH = String.valueOf(Long.MIN_VALUE).length();
 
     public static String toNumberText(long originalNum) {
         long baseNum = 1000;
@@ -59,5 +60,17 @@ public class SpeedometerUtil {
         }
 
         return String.format("%1d days", num);
+    }
+
+    public static int toDigitsTextLength(long num) {
+        if (num == 0) {
+            return 1;
+        } else if (num == Long.MIN_VALUE) {
+            return MIN_LENGTH;
+        } else if (num < 0) {
+            return 2 + (int)Math.log10(Math.abs(num)); // Note: minus(-) is added.
+        } else {
+            return 1 + (int)Math.log10(num);
+        }
     }
 }

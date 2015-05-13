@@ -38,4 +38,25 @@ public class TestSpeedometerUtil {
         assertEquals("Verify 100 days", "100 days", SpeedometerUtil.toTimeText(60L * 60 * 24 * 1000 * 100));
     }
 
+    @Test
+    public void testToNumberLengthForZero() {
+        assertEquals("Verify toNumberText to zero", 1, SpeedometerUtil.toDigitsTextLength(0));
+    }
+
+    @Test
+    public void testToNumberLengthForMax() {
+        assertEquals("Verify toNumberText to max", String.valueOf(Long.MAX_VALUE).length(), SpeedometerUtil.toDigitsTextLength(Long.MAX_VALUE));
+    }
+
+    @Test
+    public void testToNumberLengthForMin() {
+        assertEquals("Verify toNumberText to min", String.valueOf(Long.MIN_VALUE).length(), SpeedometerUtil.toDigitsTextLength(Long.MIN_VALUE));
+    }
+
+    @Test
+    public void testToNumberLengthForSeveralValues() {
+        for (int i = -1024;i < 1024;i++) {
+            assertEquals("Verify toNumberText to " + i, String.valueOf(i).length(), SpeedometerUtil.toDigitsTextLength(i));
+        }
+    }
 }

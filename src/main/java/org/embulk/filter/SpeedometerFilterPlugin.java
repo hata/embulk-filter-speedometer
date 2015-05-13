@@ -256,7 +256,7 @@ public class SpeedometerFilterPlugin
 
             private long speedMonitor(Column column, long l) {
                 speedMonitorForDelimiter(column);
-                controller.checkSpeedLimit(startRecordTime, String.valueOf(l).length());
+                controller.checkSpeedLimit(startRecordTime, SpeedometerUtil.toDigitsTextLength(l));
                 return l;
             }
 
