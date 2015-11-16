@@ -82,47 +82,46 @@ public class SpeedometerFilterPlugin
         private final Schema schema;
         private final ImmutableMap<Column, TimestampFormatter> timestampMap;
         private final PageOutput pageOutput;
-        private final PageOutput addOnlyPageOutput;
         private final PageReader pageReader;
         private final BufferAllocator allocator;
         private final int delimiterLength;
         private final int recordPaddingSize;
+        private final PageBuilder pageBuilder;
 
         SpeedControlPageOutput(PluginTask task, Schema schema, PageOutput pageOutput) {
             this.controller = new SpeedometerSpeedController(task, SpeedometerSpeedAggregator.getInstance());
             this.schema = schema;
             this.pageOutput = pageOutput;
-            this.addOnlyPageOutput = new AddOnlyPageOutput(pageOutput);
             this.allocator = task.getBufferAllocator();
             this.delimiterLength = task.getDelimiter().length();
             this.recordPaddingSize = task.getRecordPaddingSize();
-            pageReader = new PageReader(schema);
-            timestampMap = buildTimestampFormatterMap(task, schema);
+            this.pageReader = new PageReader(schema);
+            this.timestampMap = buildTimestampFormatterMap(task, schema);
+            this.pageBuilder = new PageBuilder(allocator, schema, pageOutput);
         }
 
         @Override
         public void add(Page page) {
-            try (final PageBuilder pageBuilder = new PageBuilder(allocator, schema, addOnlyPageOutput)) {
-                ColumnVisitorImpl visitor = new ColumnVisitorImpl(pageBuilder);
-                pageReader.setPage(page);
-                while (pageReader.nextRecord()) {
-                    visitor.speedMonitorStartRecord();
-                    schema.visitColumns(visitor);
-                    visitor.speedMonitorEndRecord();
-                    pageBuilder.addRecord();
-                }
-                pageBuilder.finish();
+            ColumnVisitorImpl visitor = new ColumnVisitorImpl(pageBuilder);
+            pageReader.setPage(page);
+            while (pageReader.nextRecord()) {
+                visitor.speedMonitorStartRecord();
+                schema.visitColumns(visitor);
+                visitor.speedMonitorEndRecord();
+                pageBuilder.addRecord();
             }
         }
 
         @Override
         public void finish() {
+            pageBuilder.finish();
             pageOutput.finish();
         }
 
         @Override
         public void close() {
             controller.stop();
+            pageBuilder.close();
             pageReader.close();
             pageOutput.close();
         }
@@ -157,25 +156,6 @@ public class SpeedometerFilterPlugin
             return builder.build();
         }
 
-        // Ignore finish and close to avoid closing upper output stream.
-        static class AddOnlyPageOutput implements PageOutput {
-            protected final PageOutput output;
-
-            public AddOnlyPageOutput(PageOutput outptut) {
-                this.output = outptut;
-            }
-
-            @Override
-            public void add(Page page) {
-                output.add(page);
-            }
-
-            @Override
-            public void finish() { }
-
-            @Override
-            public void close() { }
-        }
 
         class ColumnVisitorImpl implements ColumnVisitor {
             private final PageBuilder pageBuilder;
