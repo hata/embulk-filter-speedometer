@@ -69,8 +69,8 @@ public class TestSpeedometerFilterPlugin
 
         new Verifications() {{
             taskSource.loadTask(PluginTask.class); times = 1;
-            builder.finish(); times = 1;
             builder.addRecord(); times = 1;
+            builder.finish(); times = 0;
             reader.nextRecord(); times = 2;
             reader.setPage(page); times = 1;
             schema.visitColumns(withInstanceOf(ColumnVisitor.class)); times = 2;
@@ -90,6 +90,7 @@ public class TestSpeedometerFilterPlugin
 
         new Verifications() {{
             taskSource.loadTask(PluginTask.class); times = 1;
+            builder.finish(); times = 1;
             inPageOutput.finish(); times = 1;
         }};
     }
@@ -107,6 +108,7 @@ public class TestSpeedometerFilterPlugin
 
         new Verifications() {{
             taskSource.loadTask(PluginTask.class); times = 1;
+            builder.close(); times = 1;
             reader.close(); times = 1;
             inPageOutput.close(); times = 1;
         }};
