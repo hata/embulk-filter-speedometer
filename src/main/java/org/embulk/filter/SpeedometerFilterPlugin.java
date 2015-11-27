@@ -1,5 +1,7 @@
 package org.embulk.filter;
 
+import java.util.Map;
+
 import javax.validation.constraints.Min;
 
 import org.embulk.config.Config;
@@ -19,9 +21,7 @@ import org.embulk.spi.PageReader;
 import org.embulk.spi.Schema;
 import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampFormatter;
-import org.embulk.spi.type.TimestampType;
-
-import com.google.common.collect.ImmutableMap;
+import org.embulk.spi.util.Timestamps;
 
 public class SpeedometerFilterPlugin
         implements FilterPlugin
@@ -30,7 +30,7 @@ public class SpeedometerFilterPlugin
     private static final int FALSE_LENGTH = Boolean.toString(false).length();
 
     public interface PluginTask
-            extends Task,  TimestampFormatter.FormatterTask
+            extends Task,  TimestampFormatter.Task
     {
         @Config("speed_limit")
         @ConfigDefault("0")
@@ -55,9 +55,17 @@ public class SpeedometerFilterPlugin
         @Min(0)
         public int getLogIntervalSeconds();
 
+        @Config("column_options")
+        @ConfigDefault("{}")
+        Map<String, TimestampColumnOption> getColumnOptions();
+
         @ConfigInject
         public BufferAllocator getBufferAllocator();
     }
+
+    public interface TimestampColumnOption extends Task,
+    TimestampFormatter.TimestampColumnOption
+    { }
 
     @Override
     public void transaction(ConfigSource config, Schema inputSchema,
@@ -80,7 +88,7 @@ public class SpeedometerFilterPlugin
     static class SpeedControlPageOutput implements PageOutput {
         private final SpeedometerSpeedController controller;
         private final Schema schema;
-        private final ImmutableMap<Column, TimestampFormatter> timestampMap;
+        private final TimestampFormatter[] timestampFormatters;
         private final PageOutput pageOutput;
         private final PageReader pageReader;
         private final BufferAllocator allocator;
@@ -96,7 +104,7 @@ public class SpeedometerFilterPlugin
             this.delimiterLength = task.getDelimiter().length();
             this.recordPaddingSize = task.getRecordPaddingSize();
             this.pageReader = new PageReader(schema);
-            this.timestampMap = buildTimestampFormatterMap(task, schema);
+            this.timestampFormatters = Timestamps.newTimestampColumnFormatters(task, schema, task.getColumnOptions());
             this.pageBuilder = new PageBuilder(allocator, schema, pageOutput);
         }
 
@@ -125,37 +133,6 @@ public class SpeedometerFilterPlugin
             pageReader.close();
             pageOutput.close();
         }
-
-        private ImmutableMap<Column, TimestampFormatter> buildTimestampFormatterMap(final PluginTask task, Schema schema) {
-            final ImmutableMap.Builder<Column, TimestampFormatter> builder = new ImmutableMap.Builder<>();
-
-            schema.visitColumns(new ColumnVisitor() {
-                @Override
-                public void booleanColumn(Column column) { }
-
-                @Override
-                public void longColumn(Column column) { }
-
-                @Override
-                public void doubleColumn(Column column) { }
-
-                @Override
-                public void stringColumn(Column column) { }
-
-                @Override
-                public void timestampColumn(Column column) {
-                    if (column.getType() instanceof TimestampType) {
-                        TimestampType tt = (TimestampType) column.getType();
-                        builder.put(column, new TimestampFormatter(tt.getFormat(), task));
-                    } else {
-                        throw new RuntimeException("Timestamp should be TimestampType.");
-                    }
-                }
-            });
-
-            return builder.build();
-        }
-
 
         class ColumnVisitorImpl implements ColumnVisitor {
             private final PageBuilder pageBuilder;
@@ -254,7 +231,7 @@ public class SpeedometerFilterPlugin
 
             private Timestamp speedMonitor(Column column, Timestamp t) {
                 speedMonitorForDelimiter(column);
-                TimestampFormatter formatter = timestampMap.get(column);
+                TimestampFormatter formatter = timestampFormatters[column.getIndex()];
                 controller.checkSpeedLimit(startRecordTime, formatter.format(t).length());
                 return t;
             }

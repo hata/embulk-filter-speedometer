@@ -73,7 +73,7 @@ public class TestSpeedometerFilterPlugin
             builder.finish(); times = 0;
             reader.nextRecord(); times = 2;
             reader.setPage(page); times = 1;
-            schema.visitColumns(withInstanceOf(ColumnVisitor.class)); times = 2;
+            schema.visitColumns(withInstanceOf(ColumnVisitor.class)); times = 1;
         }};
     }
 

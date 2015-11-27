@@ -1,6 +1,7 @@
 # Speedometer Filter Plugin for Embulk
 
 Write log message of processed bytes and throughput periodically.
+This plugin works with embulk:0.6.17 or later versions because of removing deprecated APIs.
 
 ## Overview
 
@@ -12,6 +13,7 @@ Write log message of processed bytes and throughput periodically.
 - **speed_limit**: Set maximum processing size per second. If 0 is set, then no limit. (integer, optional, default: 0)
 - **delimiter**: Delimiter text to calculate delimiter length. (string, optional, default: ",")
 - **record_padding_size**: Additional byte size for each record like a return code length. (integer, optional, default: 1)
+- **column_options**: A map whose keys are name of columns like csv formatter plugin (hash, optional, default: {})
 
 ## Example of Configuration
 
@@ -49,6 +51,18 @@ filters:
     delimiter: ", "
     record_padding_size: 0
 ```
+
+- Set timestamp format to change default format for timestamp columns. The following **column_options** set %Y-%m-%d %H:%M:%S for time column and %Y%m%d for purchase column. If this option is not set, then a default embulk timestamp format is used.
+
+```yaml
+filters:
+  - type: speedometer
+    speed_limit: 250000
+    column_options:
+      time: {format: '%Y-%m-%d %H:%M:%S'}
+      purchase: {format: '%Y%m%d'}
+```
+
 
 ## Sample Log Message
 
