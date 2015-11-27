@@ -53,16 +53,17 @@ filters:
 ## Sample Log Message
 
 ```
-2015-03-07 18:28:51.208 -0800 [INFO] (task-0007): {speedometer: {active: 0, total: 0.0b, sec: 0.00, speed: 0.0b/s}}
-2015-03-07 18:28:51.397 -0800 [INFO] (task-0000): {speedometer: {active: 0, total: 144b, sec: 0.00, speed: 144kb/s}}
-2015-03-07 18:29:01.401 -0800 [INFO] (task-0002): {speedometer: {active: 5, total: 9.2mb, sec: 10.0, speed: 999kb/s}}
-2015-03-07 18:29:11.410 -0800 [INFO] (task-0008): {speedometer: {active: 5, total: 36.1mb, sec: 20.0, speed: 2.7mb/s}}
+2015-11-27 13:43:25.592 +0900 [INFO] (task-0006): {speedometer: {active: 4, total: 13.5mb, sec: 1:51, speed: 121kb/s, records: 269,748, record-speed: 2,435/s}}
+2015-11-27 13:43:35.642 +0900 [INFO] (task-0004): {speedometer: {active: 4, total: 14.9mb, sec: 2:01, speed: 141kb/s, records: 297,532, record-speed: 2,832/s}}
+2015-11-27 13:43:45.661 +0900 [INFO] (task-0005): {speedometer: {active: 3, total: 16.5mb, sec: 2:11, speed: 119kb/s, records: 329,484, record-speed: 2,395/s}}
 ```
 
 - **active**: running threads
 - **total**: processed bytes. This size is calculated based on text data like csv. For example, boolean value is 4 bytes(true) or 5 bytes(false). The default configuration set a byte for delimiter and a byte padding for each record.
 - **sec**: elapsed time.
 - **speed**: bytes per second.
+- **records**: total processed records.
+- **record-speed**: total processed records per second.
 
 ## Build
 

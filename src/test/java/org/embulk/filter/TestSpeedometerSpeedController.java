@@ -111,4 +111,41 @@ public class TestSpeedometerSpeedController {
         assertTrue("Verify renewPeriod flag is set.", controller.isRenewPeriodSet());
     }
 
+    @Test
+    public void testGetTotalRecords() {
+        new NonStrictExpectations() {{
+            task.getSpeedLimit(); result = 1L;
+            task.getMaxSleepMillisec(); result = 2;
+            task.getLogIntervalSeconds(); result = 3;
+            aggregator.getSpeedLimitForController((SpeedometerSpeedController)any); result = 10000;
+        }};
+        long nowTime = System.currentTimeMillis();
+        int newDataSize = 3;
+
+        controller = new SpeedometerSpeedController(task, aggregator);
+        assertEquals("Verify total records is zero.", 0, controller.getTotalRecords());
+        controller.checkSpeedLimit(nowTime, newDataSize);
+        assertEquals("Verify total records is zero for no new record.", 0, controller.getTotalRecords());
+        controller.checkSpeedLimit(nowTime + 1, newDataSize, true);
+        assertEquals("Verify total records", 1, controller.getTotalRecords());
+    }
+
+    @Test
+    public void testGetPeriodRecordsPerSec() {
+        new NonStrictExpectations() {{
+            task.getSpeedLimit(); result = 1L;
+            task.getMaxSleepMillisec(); result = 2;
+            task.getLogIntervalSeconds(); result = 3;
+            aggregator.getSpeedLimitForController((SpeedometerSpeedController)any); result = 10000;
+        }};
+        long nowTime = System.currentTimeMillis();
+        int newDataSize = 3;
+
+        controller = new SpeedometerSpeedController(task, aggregator);
+        assertEquals("Verify total records/s", 0, controller.getPeriodRecordsPerSec(System.currentTimeMillis()));
+        controller.checkSpeedLimit(nowTime, newDataSize);
+        assertEquals("Verify total records/s is not changed", 0, controller.getPeriodRecordsPerSec(System.currentTimeMillis()));
+        controller.checkSpeedLimit(nowTime, newDataSize, true);
+        assertTrue("Verify total records/s is changed", controller.getPeriodRecordsPerSec(System.currentTimeMillis()) > 0);
+    }
 }

@@ -14,6 +14,8 @@ class SpeedometerSpeedController {
     private volatile long periodStartTime;
     private volatile long periodTotalBytes;
     private volatile long threadTotalBytes;
+    private volatile long periodTotalRecords;
+    private volatile long threadTotalRecords;
     private volatile boolean renewFlag = true;
 
     SpeedometerSpeedController(PluginTask task, SpeedometerSpeedAggregator aggregator) {
@@ -43,16 +45,24 @@ class SpeedometerSpeedController {
     public long getTotalBytes() {
         return threadTotalBytes + periodTotalBytes;
     }
+    
+    public long getTotalRecords() {
+        return threadTotalRecords + periodTotalRecords;
+    }
 
     public long getPeriodBytesPerSec(long nowTime) {
-        long timeDeltaMillisec = nowTime - periodStartTime;
-        if (timeDeltaMillisec <= 0) {
-            timeDeltaMillisec = 1;
-        }
-        return (periodTotalBytes * 1000) / timeDeltaMillisec;
+        return (periodTotalBytes * 1000) / getTimeDeltaMillisec(nowTime);
+    }
+
+    public long getPeriodRecordsPerSec(long nowTime) {
+        return (periodTotalRecords * 1000) / getTimeDeltaMillisec(nowTime);
     }
 
     public void checkSpeedLimit(long nowTime, long newDataSize) {
+        checkSpeedLimit(nowTime, newDataSize, false);
+    }
+
+    public void checkSpeedLimit(long nowTime, long newDataSize, boolean endRecord) {
         if (startTime == 0) {
             startTime = nowTime;
             aggregator.startController(this, startTime);
@@ -64,6 +74,9 @@ class SpeedometerSpeedController {
         }
 
         periodTotalBytes += newDataSize;
+        if (endRecord) {
+            periodTotalRecords++;
+        }
         aggregator.checkProgress(nowTime, logIntervalMillisec);
 
         if (limitBytesPerSec <= 0) {
@@ -101,7 +114,14 @@ class SpeedometerSpeedController {
     private void startNewPeriod(long newPeriodTime) {
         threadTotalBytes += periodTotalBytes;
         periodTotalBytes = 0;
+        threadTotalRecords += periodTotalRecords;
+        periodTotalRecords = 0;
         periodStartTime = newPeriodTime;
+    }
+
+    private long getTimeDeltaMillisec(long nowTime) {
+        long timeDeltaMillisec = nowTime - periodStartTime;
+        return timeDeltaMillisec <= 0 ? 1 : timeDeltaMillisec;
     }
 }
 

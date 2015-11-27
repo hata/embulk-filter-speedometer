@@ -42,6 +42,7 @@ public class TestSpeedometerSpeedAggregator {
     public void testStopController() {
         new NonStrictExpectations() {{
             controller.getTotalBytes(); result = 11;
+            controller.getTotalRecords(); result = 5;
         }};
 
         SpeedometerSpeedAggregator aggregator = new SpeedometerSpeedAggregator();
@@ -51,6 +52,7 @@ public class TestSpeedometerSpeedAggregator {
         assertEquals("Verify active controller count.", 0, aggregator.getActiveControllerCount());
         assertFalse("Verify there is a registered controller.", aggregator.getControllerList().contains(controller));
         assertEquals("Verify controller's total bytes are added to aggregator.", 11, aggregator.getGlobalTotalBytes());
+        assertEquals("Verify controller's total records are added to aggregator.", 5, aggregator.getGlobalTotalRecords());
     }
 
     @Test
@@ -98,7 +100,9 @@ public class TestSpeedometerSpeedAggregator {
         new Verifications() {{
             controller.renewPeriod(); times = 1;
             controller.getTotalBytes(); times = 1;
+            controller.getTotalRecords(); times = 1;
             controller.getPeriodBytesPerSec(startPeriodTime); times = 1;
+            controller.getPeriodRecordsPerSec(startPeriodTime); times = 1;
         }};
     }
 
@@ -114,7 +118,9 @@ public class TestSpeedometerSpeedAggregator {
         new Verifications() {{
             controller.renewPeriod(); times = 0;
             controller.getTotalBytes(); times = 0;
+            controller.getTotalRecords(); times = 0;
             controller.getPeriodBytesPerSec(startPeriodTime); times = 0;
+            controller.getPeriodRecordsPerSec(startPeriodTime); times = 0;
         }};
     }
 }

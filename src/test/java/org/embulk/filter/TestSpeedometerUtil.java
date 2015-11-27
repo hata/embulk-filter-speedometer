@@ -7,20 +7,37 @@ import org.junit.Test;
 public class TestSpeedometerUtil {
 
     @Test
-    public void testToNumberText() {
-        assertEquals("Verify 0 bytes",  "0.0b", SpeedometerUtil.toNumberText(0));
-        assertEquals("Verify 0 bytes",  "100b", SpeedometerUtil.toNumberText(100));
-        assertEquals("Verify 0 bytes", "1.0kb", SpeedometerUtil.toNumberText(1000L));
-        assertEquals("Verify 0 bytes", "100kb", SpeedometerUtil.toNumberText(1000L * 100));
-        assertEquals("Verify 0 bytes", "1.0mb", SpeedometerUtil.toNumberText(1000L * 1000));
-        assertEquals("Verify 0 bytes", "100mb", SpeedometerUtil.toNumberText(1000L * 1000 * 100));
-        assertEquals("Verify 0 bytes", "1.0gb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000));
-        assertEquals("Verify 0 bytes", "100gb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 100));
-        assertEquals("Verify 0 bytes", "1.0tb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000));
-        assertEquals("Verify 0 bytes", "100tb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 100));
-        assertEquals("Verify 0 bytes", "1.0pb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000));
-        assertEquals("Verify 0 bytes", "100pb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000 * 100));
-        assertEquals("Verify 0 bytes", "1.0eb", SpeedometerUtil.toNumberText(1000L * 1000 * 1000 * 1000 * 1000 * 1000));
+    public void testToByteText() {
+        assertEquals("Verify 0 bytes",  "0.0b", SpeedometerUtil.toByteText(0));
+        assertEquals("Verify 0 bytes",  "100b", SpeedometerUtil.toByteText(100));
+        assertEquals("Verify 0 bytes", "1.0kb", SpeedometerUtil.toByteText(1000L));
+        assertEquals("Verify 0 bytes", "100kb", SpeedometerUtil.toByteText(1000L * 100));
+        assertEquals("Verify 0 bytes", "1.0mb", SpeedometerUtil.toByteText(1000L * 1000));
+        assertEquals("Verify 0 bytes", "100mb", SpeedometerUtil.toByteText(1000L * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0gb", SpeedometerUtil.toByteText(1000L * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100gb", SpeedometerUtil.toByteText(1000L * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0tb", SpeedometerUtil.toByteText(1000L * 1000 * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100tb", SpeedometerUtil.toByteText(1000L * 1000 * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0pb", SpeedometerUtil.toByteText(1000L * 1000 * 1000 * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100pb", SpeedometerUtil.toByteText(1000L * 1000 * 1000 * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1.0eb", SpeedometerUtil.toByteText(1000L * 1000 * 1000 * 1000 * 1000 * 1000));
+    }
+
+    @Test
+    public void testToDecimalText() {
+        assertEquals("Verify 0 bytes", "0", SpeedometerUtil.toDecimalText(0));
+        assertEquals("Verify 0 bytes", "100", SpeedometerUtil.toDecimalText(100));
+        assertEquals("Verify 0 bytes", "1,000", SpeedometerUtil.toDecimalText(1000L));
+        assertEquals("Verify 0 bytes", "100,000", SpeedometerUtil.toDecimalText(1000L * 100));
+        assertEquals("Verify 0 bytes", "1,000,000", SpeedometerUtil.toDecimalText(1000L * 1000));
+        assertEquals("Verify 0 bytes", "100,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1,000,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100,000,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1,000,000,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100,000,000,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1,000,000,000,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 1000 * 1000 * 1000));
+        assertEquals("Verify 0 bytes", "100,000,000,000,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 1000 * 1000 * 1000 * 100));
+        assertEquals("Verify 0 bytes", "1,000,000,000,000,000,000", SpeedometerUtil.toDecimalText(1000L * 1000 * 1000 * 1000 * 1000 * 1000));
     }
 
     @Test

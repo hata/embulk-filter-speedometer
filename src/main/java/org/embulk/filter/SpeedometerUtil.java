@@ -1,9 +1,11 @@
 package org.embulk.filter;
 
+import java.text.NumberFormat;
+
 public class SpeedometerUtil {
     private static final int MIN_LENGTH = String.valueOf(Long.MIN_VALUE).length();
 
-    public static String toNumberText(long originalNum) {
+    public static String toByteText(long originalNum) {
         long baseNum = 1000;
         long remain = 0;
         float num = originalNum;
@@ -22,6 +24,10 @@ public class SpeedometerUtil {
         }
 
         return String.valueOf(originalNum);
+    }
+
+    public static String toDecimalText(long originalNum) {
+        return NumberFormat.getNumberInstance().format(originalNum);
     }
 
     public static String toTimeText(long timeMillisecs) {

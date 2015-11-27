@@ -240,7 +240,7 @@ public class SpeedometerFilterPlugin
             }
 
             private void speedMonitorEndRecord() {
-                controller.checkSpeedLimit(startRecordTime, recordPaddingSize);
+                controller.checkSpeedLimit(startRecordTime, recordPaddingSize, true);
             }
 
             // For null column
