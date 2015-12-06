@@ -1,5 +1,7 @@
 # Speedometer Filter Plugin for Embulk
 
+[![Build Status](https://travis-ci.org/hata/embulk-filter-speedometer.svg?branch=master)](https://travis-ci.org/hata/embulk-filter-speedometer.svg?branch=master)
+
 Write log message of processed bytes and throughput periodically.
 This plugin works with embulk:0.6.17 or later versions because of removing deprecated APIs.
 
