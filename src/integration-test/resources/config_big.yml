@@ -1,0 +1,45 @@
+in:
+  type: file
+  path_prefix: ./big_
+  decoders:
+  - {type: gzip}
+  parser:
+    charset: UTF-8
+    newline: CRLF
+    type: csv
+    delimiter: ','
+    quote: '"'
+    trim_if_not_quoted: false
+    skip_header_lines: 1
+    allow_extra_columns: false
+    allow_optional_columns: false
+    columns:
+    - {name: id, type: long}
+    - {name: account, type: long}
+    - {name: time, type: timestamp, format: '%Y-%m-%d %H:%M:%S'}
+    - {name: purchase, type: timestamp, format: '%Y%m%d'}
+    - {name: enabled, type: boolean}
+    - {name: comment, type: string}
+filters:
+  - type: speedometer
+    log_interval_seconds: 5
+    delimiter: ", "
+    record_padding_size: 2
+    speed_limit: 250000
+    column_options:
+      time: {format: '%Y-%m-%d %H:%M:%S'}
+      purchase: {format: '%Y%m%d'}
+out:
+  type: file
+  path_prefix: ./result_big_
+  file_ext: csv
+  formatter:
+    type: csv
+    quote_policy: MINIMAL
+    default_timezone: UTC
+    newline: LF
+    column_options:
+      time: {format: '%Y-%m-%d %H:%M:%S'}
+      purchase: {format: '%Y%m%d'}
+
+
