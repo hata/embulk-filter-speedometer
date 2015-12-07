@@ -1,3 +1,3 @@
 language: java
-script: ./gradlew gem
+script: ./gradlew -DenableIntegrationTest=true gem
 
