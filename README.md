@@ -87,6 +87,13 @@ filters:
 $ ./gradlew gem
 ```
 
+Build with integrationTest
+
+```
+$ ./gradlew -DenableIntegrationTest=true gem
+```
+
+
 ## Note
 
 The shown data is caled based on text data size while using this filter plugin. So, the data is not the same data as read bytes and write bytes n input and output plugins. And this plugin has a little overhead to measure the bytes.
