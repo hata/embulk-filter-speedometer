@@ -7,12 +7,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.regex.Pattern;
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
 import java.util.zip.GZIPInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import org.junit.Test;
 
@@ -28,12 +29,12 @@ public class TestSingleRun {
 
     @Test
     public void testValidateMinOutputFile() throws Exception {
-        validateResultFile("min_01.csv.gz", "result_min_000.00.csv");
+        validateResultFiles("min_01.csv.gz", "result_min_000.00.csv", "result_min_001.00.csv");
     }
 
     @Test
     public void testValidateBigOutputFile() throws Exception {
-        validateResultFile("big_01.csv.gz", "result_big_000.00.csv");
+        validateResultFiles("big_01.csv.gz", "result_big_000.00.csv", "result_big_001.00.csv");
     }
 
     @Test
@@ -61,29 +62,34 @@ public class TestSingleRun {
         assertTrue("Verify there are speedometer log lines.", found);
     }
 
-    private void validateResultFile(String gzipSrcFile, String resultFile) throws Exception {
-        long sourceCksum;
-        long destCksum;
+    private void validateResultFiles(String gzipSrcFile, String... resultFiles) throws Exception {
+        ArrayList inList = new ArrayList();
+        ArrayList outList = new ArrayList();
 
-        try (InputStream in = new GZIPInputStream(new FileInputStream(getTestFile(gzipSrcFile)))) {
-            sourceCksum = getChecksum(in);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+            new GZIPInputStream(new FileInputStream(getTestFile(gzipSrcFile)))))) {
+            String line = reader.readLine(); // Discard a header line
+            line = reader.readLine();
+            while (line != null) {
+                inList.add(line);
+                line = reader.readLine();
+            }
         }
 
-        try (InputStream in = new FileInputStream(getTestFile(resultFile))) {
-            destCksum = getChecksum(in);
+        for (String resultFile : resultFiles) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(getTestFile(resultFile)))) {
+                String line = reader.readLine(); // Discard a header line
+                line = reader.readLine();
+                while (line != null) {
+                    outList.add(line);
+                    line = reader.readLine();
+                }
+            }
         }
 
-        assertEquals("Verify input and output contents are identical.", sourceCksum, destCksum);
-    }
+        Collections.sort(inList);
+        Collections.sort(outList);
 
-    private long getChecksum(InputStream in) throws IOException {
-        Checksum cksum = new CRC32();
-        byte[] buf = new byte[8192];
-        int len = in.read(buf);
-        while (len > 0) {
-            cksum.update(buf, 0, len);
-            len = in.read(buf);
-        }
-        return cksum.getValue();
+        assertEquals("Verify input and output lines are identical.", inList, outList);
     }
 }
