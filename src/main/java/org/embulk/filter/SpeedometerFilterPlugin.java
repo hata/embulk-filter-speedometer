@@ -123,7 +123,6 @@ public class SpeedometerFilterPlugin
         @Override
         public void finish() {
             pageBuilder.finish();
-            pageOutput.finish();
         }
 
         @Override
