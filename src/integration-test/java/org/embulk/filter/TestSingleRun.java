@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStreamReader;
@@ -29,12 +30,12 @@ public class TestSingleRun {
 
     @Test
     public void testValidateMinOutputFile() throws Exception {
-        validateResultFiles("min_01.csv.gz", "result_min_000.00.csv", "result_min_001.00.csv");
+        validateResultFiles("min_01.csv.gz", "result_min_");
     }
 
     @Test
     public void testValidateBigOutputFile() throws Exception {
-        validateResultFiles("big_01.csv.gz", "result_big_000.00.csv", "result_big_001.00.csv");
+        validateResultFiles("big_01.csv.gz", "result_big_");
     }
 
     @Test
@@ -62,7 +63,7 @@ public class TestSingleRun {
         assertTrue("Verify there are speedometer log lines.", found);
     }
 
-    private void validateResultFiles(String gzipSrcFile, String... resultFiles) throws Exception {
+    private void validateResultFiles(String gzipSrcFile, final String prefix) throws Exception {
         ArrayList inList = new ArrayList();
         ArrayList outList = new ArrayList();
 
@@ -75,6 +76,14 @@ public class TestSingleRun {
                 line = reader.readLine();
             }
         }
+
+        // In travis env, there are many cpus and it may be different from
+        // my local environment. From this, list all files using File.list method.
+        String[] resultFiles = new File(TEST_DIR).list(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.startsWith(prefix) && name.endsWith(".csv");
+            }
+        });
 
         for (String resultFile : resultFiles) {
             try (BufferedReader reader = new BufferedReader(new FileReader(getTestFile(resultFile)))) {
@@ -90,6 +99,7 @@ public class TestSingleRun {
         Collections.sort(inList);
         Collections.sort(outList);
 
-        assertEquals("Verify input and output lines are identical.", inList, outList);
+        assertEquals("Verify input and output lines are identical. in:" +
+            inList.size() + ", out:" + outList.size(), inList.toString(), outList.toString());
     }
 }
