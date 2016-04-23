@@ -89,7 +89,6 @@ public class SpeedometerFilterPlugin
         private final SpeedometerSpeedController controller;
         private final Schema schema;
         private final TimestampFormatter[] timestampFormatters;
-        private final PageOutput pageOutput;
         private final PageReader pageReader;
         private final BufferAllocator allocator;
         private final int delimiterLength;
@@ -99,7 +98,6 @@ public class SpeedometerFilterPlugin
         SpeedControlPageOutput(PluginTask task, Schema schema, PageOutput pageOutput) {
             this.controller = new SpeedometerSpeedController(task, SpeedometerSpeedAggregator.getInstance());
             this.schema = schema;
-            this.pageOutput = pageOutput;
             this.allocator = task.getBufferAllocator();
             this.delimiterLength = task.getDelimiter().length();
             this.recordPaddingSize = task.getRecordPaddingSize();
@@ -130,7 +128,6 @@ public class SpeedometerFilterPlugin
             controller.stop();
             pageBuilder.close();
             pageReader.close();
-            pageOutput.close();
         }
 
         class ColumnVisitorImpl implements ColumnVisitor {
