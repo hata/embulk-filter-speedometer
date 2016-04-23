@@ -90,6 +90,7 @@ public class TestSingleRun {
         Collections.sort(inList);
         Collections.sort(outList);
 
-        assertEquals("Verify input and output lines are identical.", inList, outList);
+        assertEquals("Verify input and output lines are identical. in:" +
+            inList.size() + ", out:" + outList.size(), inList.toString(), outList.toString());
     }
 }
