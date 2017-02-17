@@ -141,7 +141,7 @@ public class TestSingleRun {
             line = stripQuote(line);
             if (line.startsWith("{") && line.endsWith("}")) {
                 ArrayList<String> fields = new ArrayList<>();
-                for (String field : line.substring(1, line.length() - 2).split(",")) {
+                for (String field : line.substring(1, line.length() - 1).split(",")) {
                     fields.add(field);
                 }
                 Collections.sort(fields);
@@ -154,6 +154,6 @@ public class TestSingleRun {
     }
 
     private String stripQuote(String line) {
-        return line.startsWith("'") && line.endsWith("'") ? line.substring(1, line.length() - 1) : line;
+        return line.startsWith("'") && line.endsWith("'") ? line.substring(1, line.length() -1) : line;
     }
 }
