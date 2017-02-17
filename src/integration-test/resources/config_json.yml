@@ -1,0 +1,20 @@
+in:
+  type: file
+  path_prefix: ./json_
+  decoders:
+  - {type: gzip}
+  parser:
+    type: json
+filters:
+  - type: speedometer
+    speed_limit: 250000
+out:
+  type: file
+  path_prefix: ./result_json_
+  file_ext: csv
+  formatter:
+    type: csv
+    quote_policy: MINIMAL
+    default_timezone: UTC
+    newline: LF
+    quote: "'"

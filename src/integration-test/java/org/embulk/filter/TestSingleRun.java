@@ -39,6 +39,11 @@ public class TestSingleRun {
     }
 
     @Test
+    public void testValidateJsonOutputFile() throws Exception {
+        validateResultFiles("ref_json_result_01.csv.gz", "result_json_");
+    }
+
+    @Test
     public void testSpeedometerMinLog() throws Exception {
         validateSpeedometerLog("config_min.yml.run.log");
     }
@@ -46,6 +51,11 @@ public class TestSingleRun {
     @Test
     public void testSpeedometerBigLog() throws Exception {
         validateSpeedometerLog("config_big.yml.run.log");
+    }
+
+    @Test
+    public void testSpeedometerJsonLog() throws Exception {
+        validateSpeedometerLog("config_json.yml.run.log");
     }
 
     private void validateSpeedometerLog(String logFile) throws Exception {
