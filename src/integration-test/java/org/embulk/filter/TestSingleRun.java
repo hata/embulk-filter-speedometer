@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.List;
 import java.util.Collections;
 import java.util.Set;
@@ -135,14 +135,17 @@ public class TestSingleRun {
         }
     }
 
-    private Set<String> readToSet(List<String> lineList) throws Exception {
-        HashSet<String> set = new HashSet<>();
+    private TreeSet<String> readToSet(List<String> lineList) throws Exception {
+        TreeSet<String> set = new TreeSet<>();
         for (String line : lineList) {
             line = stripQuote(line);
             if (line.startsWith("{") && line.endsWith("}")) {
+                ArrayList<String> fields = new ArrayList<>();
                 for (String field : line.substring(1, line.length() - 2).split(",")) {
-                    set.add(field);
+                    fields.add(field);
                 }
+                Collections.sort(fields);
+                set.add(fields.toString());
             } else {
                 throw new Exception("Unexpected lines." + lineList);
             }
