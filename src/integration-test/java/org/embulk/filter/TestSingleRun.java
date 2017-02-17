@@ -14,7 +14,10 @@ import java.io.InputStream;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.ArrayList;
+import java.util.TreeSet;
+import java.util.List;
 import java.util.Collections;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -39,6 +42,11 @@ public class TestSingleRun {
     }
 
     @Test
+    public void testValidateJsonOutputFile() throws Exception {
+        validateJsonResultFiles("ref_json_result_01.csv.gz", "result_json_");
+    }
+
+    @Test
     public void testSpeedometerMinLog() throws Exception {
         validateSpeedometerLog("config_min.yml.run.log");
     }
@@ -46,6 +54,11 @@ public class TestSingleRun {
     @Test
     public void testSpeedometerBigLog() throws Exception {
         validateSpeedometerLog("config_big.yml.run.log");
+    }
+
+    @Test
+    public void testSpeedometerJsonLog() throws Exception {
+        validateSpeedometerLog("config_json.yml.run.log");
     }
 
     private void validateSpeedometerLog(String logFile) throws Exception {
@@ -64,19 +77,44 @@ public class TestSingleRun {
     }
 
     private void validateResultFiles(String gzipSrcFile, final String prefix) throws Exception {
-        ArrayList inList = new ArrayList();
-        ArrayList outList = new ArrayList();
+        ArrayList<String> inList = new ArrayList();
+        ArrayList<String> outList = new ArrayList();
 
+        readToListFromGzipFile(gzipSrcFile, inList);
+        readToListFromPrefixMatching(prefix, outList);
+
+        Collections.sort(inList);
+        Collections.sort(outList);
+
+        assertEquals("Verify input and output lines are identical. in:" +
+            inList.size() + ", out:" + outList.size(), inList.toString(), outList.toString());
+    }
+
+
+    private void validateJsonResultFiles(String gzipSrcFile, final String prefix) throws Exception {
+        ArrayList<String> inList = new ArrayList();
+        ArrayList<String> outList = new ArrayList();
+
+        readToListFromGzipFile(gzipSrcFile, inList);
+        readToListFromPrefixMatching(prefix, outList);
+
+        assertEquals("Verify input and output lines are identical. in:" +
+            inList.size() + ", out:" + outList.size(), readToSet(inList), readToSet(outList));
+    }
+
+    private void readToListFromGzipFile(String gzipSrcFile, List<String> lineList) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
             new GZIPInputStream(new FileInputStream(getTestFile(gzipSrcFile)))))) {
             String line = reader.readLine(); // Discard a header line
             line = reader.readLine();
             while (line != null) {
-                inList.add(line);
+                lineList.add(line);
                 line = reader.readLine();
             }
         }
+    }
 
+    private void readToListFromPrefixMatching(final String prefix, List<String> lineList) throws IOException {
         // In travis env, there are many cpus and it may be different from
         // my local environment. From this, list all files using File.list method.
         String[] resultFiles = new File(TEST_DIR).list(new FilenameFilter() {
@@ -90,16 +128,32 @@ public class TestSingleRun {
                 String line = reader.readLine(); // Discard a header line
                 line = reader.readLine();
                 while (line != null) {
-                    outList.add(line);
+                    lineList.add(line);
                     line = reader.readLine();
                 }
             }
         }
+    }
 
-        Collections.sort(inList);
-        Collections.sort(outList);
+    private TreeSet<String> readToSet(List<String> lineList) throws Exception {
+        TreeSet<String> set = new TreeSet<>();
+        for (String line : lineList) {
+            line = stripQuote(line);
+            if (line.startsWith("{") && line.endsWith("}")) {
+                ArrayList<String> fields = new ArrayList<>();
+                for (String field : line.substring(1, line.length() - 1).split(",")) {
+                    fields.add(field);
+                }
+                Collections.sort(fields);
+                set.add(fields.toString());
+            } else {
+                throw new Exception("Unexpected lines." + lineList);
+            }
+        }
+        return set;
+    }
 
-        assertEquals("Verify input and output lines are identical. in:" +
-            inList.size() + ", out:" + outList.size(), inList.toString(), outList.toString());
+    private String stripQuote(String line) {
+        return line.startsWith("'") && line.endsWith("'") ? line.substring(1, line.length() -1) : line;
     }
 }

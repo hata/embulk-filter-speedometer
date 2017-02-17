@@ -22,6 +22,7 @@ import org.embulk.spi.Schema;
 import org.embulk.spi.time.Timestamp;
 import org.embulk.spi.time.TimestampFormatter;
 import org.embulk.spi.util.Timestamps;
+import org.msgpack.value.Value;
 
 public class SpeedometerFilterPlugin
         implements FilterPlugin
@@ -188,6 +189,16 @@ public class SpeedometerFilterPlugin
                 }
             }
 
+            @Override
+            public void jsonColumn(Column column) {
+                if (pageReader.isNull(column)) {
+                    speedMonitor(column);
+                    pageBuilder.setNull(column);
+                } else {
+                    pageBuilder.setJson(column, speedMonitor(column, pageReader.getJson(column)));
+                }
+            }
+
             private void speedMonitorStartRecord() {
                 startRecordTime = System.currentTimeMillis();
             }
@@ -230,6 +241,14 @@ public class SpeedometerFilterPlugin
                 TimestampFormatter formatter = timestampFormatters[column.getIndex()];
                 controller.checkSpeedLimit(startRecordTime, formatter.format(t).length());
                 return t;
+            }
+
+            private Value speedMonitor(Column column, Value v) {
+                speedMonitorForDelimiter(column);
+                // NOTE: This may not be good for performance. But, I have no other idea.
+                String s = v.toJson();
+                controller.checkSpeedLimit(startRecordTime, s != null ? s.length() : 0);
+                return v;
             }
 
             private void speedMonitorForDelimiter(Column column) {

@@ -18,11 +18,12 @@ configurations {
     provided
 }
 
-version = "0.3.2"
+version = "0.3.3"
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.6.17+"
-    provided "org.embulk:embulk-core:0.6.17+"
+    compile  "org.embulk:embulk-core:0.8.0+"
+    compile  "org.msgpack:msgpack-core:0.7.1"
+    provided "org.embulk:embulk-core:0.8.0+"
     // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
     testCompile "org.jmockit:jmockit:1.15+"
     testCompile "junit:junit:4.+"
