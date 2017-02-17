@@ -14,7 +14,10 @@ import java.io.InputStream;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Collections;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -40,7 +43,7 @@ public class TestSingleRun {
 
     @Test
     public void testValidateJsonOutputFile() throws Exception {
-        validateResultFiles("ref_json_result_01.csv.gz", "result_json_");
+        validateJsonResultFiles("ref_json_result_01.csv.gz", "result_json_");
     }
 
     @Test
@@ -74,19 +77,44 @@ public class TestSingleRun {
     }
 
     private void validateResultFiles(String gzipSrcFile, final String prefix) throws Exception {
-        ArrayList inList = new ArrayList();
-        ArrayList outList = new ArrayList();
+        ArrayList<String> inList = new ArrayList();
+        ArrayList<String> outList = new ArrayList();
 
+        readToListFromGzipFile(gzipSrcFile, inList);
+        readToListFromPrefixMatching(prefix, outList);
+
+        Collections.sort(inList);
+        Collections.sort(outList);
+
+        assertEquals("Verify input and output lines are identical. in:" +
+            inList.size() + ", out:" + outList.size(), inList.toString(), outList.toString());
+    }
+
+
+    private void validateJsonResultFiles(String gzipSrcFile, final String prefix) throws Exception {
+        ArrayList<String> inList = new ArrayList();
+        ArrayList<String> outList = new ArrayList();
+
+        readToListFromGzipFile(gzipSrcFile, inList);
+        readToListFromPrefixMatching(prefix, outList);
+
+        assertEquals("Verify input and output lines are identical. in:" +
+            inList.size() + ", out:" + outList.size(), readToSet(inList), readToSet(outList));
+    }
+
+    private void readToListFromGzipFile(String gzipSrcFile, List<String> lineList) throws IOException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
             new GZIPInputStream(new FileInputStream(getTestFile(gzipSrcFile)))))) {
             String line = reader.readLine(); // Discard a header line
             line = reader.readLine();
             while (line != null) {
-                inList.add(line);
+                lineList.add(line);
                 line = reader.readLine();
             }
         }
+    }
 
+    private void readToListFromPrefixMatching(final String prefix, List<String> lineList) throws IOException {
         // In travis env, there are many cpus and it may be different from
         // my local environment. From this, list all files using File.list method.
         String[] resultFiles = new File(TEST_DIR).list(new FilenameFilter() {
@@ -100,16 +128,29 @@ public class TestSingleRun {
                 String line = reader.readLine(); // Discard a header line
                 line = reader.readLine();
                 while (line != null) {
-                    outList.add(line);
+                    lineList.add(line);
                     line = reader.readLine();
                 }
             }
         }
+    }
 
-        Collections.sort(inList);
-        Collections.sort(outList);
+    private Set<String> readToSet(List<String> lineList) throws Exception {
+        HashSet<String> set = new HashSet<>();
+        for (String line : lineList) {
+            line = stripQuote(line);
+            if (line.startsWith("{") && line.endsWith("}")) {
+                for (String field : line.substring(1, line.length() - 2).split(",")) {
+                    set.add(field);
+                }
+            } else {
+                throw new Exception("Unexpected lines." + lineList);
+            }
+        }
+        return set;
+    }
 
-        assertEquals("Verify input and output lines are identical. in:" +
-            inList.size() + ", out:" + outList.size(), inList.toString(), outList.toString());
+    private String stripQuote(String line) {
+        return line.startsWith("'") && line.endsWith("'") ? line.substring(1, line.length() - 1) : line;
     }
 }
