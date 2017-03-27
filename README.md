@@ -16,6 +16,7 @@ This plugin works with embulk:0.8.0 or later versions.
 - **delimiter**: Delimiter text to calculate delimiter length. (string, optional, default: ",")
 - **record_padding_size**: Additional byte size for each record like a return code length. (integer, optional, default: 1)
 - **column_options**: A map whose keys are name of columns like csv formatter plugin (hash, optional, default: {})
+- **label**: Add this text to log output as label value. (string, optional, default: null)
 
 ## Example of Configuration
 
@@ -63,6 +64,19 @@ filters:
     column_options:
       time: {format: '%Y-%m-%d %H:%M:%S'}
       purchase: {format: '%Y%m%d'}
+```
+
+
+- Set label text to distinguish log file. The following example can see label text like **{speedometer: {label: foo, active: ...**
+
+```yaml
+filters:
+  - type: speedometer
+    speed_limit: 250000
+    column_options:
+      time: {format: '%Y-%m-%d %H:%M:%S'}
+      purchase: {format: '%Y%m%d'}
+    label: 'foo'
 ```
 
 

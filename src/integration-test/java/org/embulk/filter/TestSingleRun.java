@@ -5,19 +5,17 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.InputStreamReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-import java.util.ArrayList;
-import java.util.TreeSet;
-import java.util.List;
-import java.util.Collections;
-import java.util.Set;
 
 import org.junit.Test;
 
@@ -26,6 +24,9 @@ public class TestSingleRun {
 
     // e.g. {speedometer: {active: 4, total: 13.5mb, sec: 1:51, speed: 121kb/s, records: 269,748, record-speed: 2,435/s}}
     static final Pattern logLinePattern = Pattern.compile("\\{speedometer: \\{active: [^,]+, total: [^,]+, sec: [^,]+, speed: [^,]+, records: \\S+, record-speed: [^\\}]+\\}\\}");
+
+    // Add label to the log.
+    static final Pattern logLabelLinePattern = Pattern.compile("\\{speedometer: \\{label: [^,]+, active: [^,]+, total: [^,]+, sec: [^,]+, speed: [^,]+, records: \\S+, record-speed: [^\\}]+\\}\\}");
 
     private static String getTestFile(String name) {
         return TEST_DIR + File.separator + name;
@@ -47,6 +48,11 @@ public class TestSingleRun {
     }
 
     @Test
+    public void testValidateLabelOutputFile() throws Exception {
+        validateResultFiles("label_01.csv.gz", "result_label_");
+    }
+
+    @Test
     public void testSpeedometerMinLog() throws Exception {
         validateSpeedometerLog("config_min.yml.run.log");
     }
@@ -61,12 +67,21 @@ public class TestSingleRun {
         validateSpeedometerLog("config_json.yml.run.log");
     }
 
+    @Test
+    public void testSpeedometerLabelLog() throws Exception {
+        validateSpeedometerLog("config_label.yml.run.log", logLabelLinePattern);
+    }
+
     private void validateSpeedometerLog(String logFile) throws Exception {
+        validateSpeedometerLog(logFile, logLinePattern);
+    }
+
+    private void validateSpeedometerLog(String logFile, Pattern pattern) throws Exception {
         boolean found = false;
         try (BufferedReader r = new BufferedReader(new FileReader(getTestFile(logFile)))) {
             String line = r.readLine();
             while (line != null) {
-                if (logLinePattern.matcher(line).find()) {
+                if (pattern.matcher(line).find()) {
                     found = true;
                     break;
                 }
