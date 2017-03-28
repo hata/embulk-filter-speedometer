@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.embulk.filter.SpeedometerFilterPlugin.PluginTask;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
 class SpeedometerSpeedAggregator {
-    private static class SpeedometerSpeedAggregatorHolder {
-        private static final SpeedometerSpeedAggregator INSTANCE = new SpeedometerSpeedAggregator();
-    }
+    private static final Object INSTANCE_LOCK = new Object();
+    private static SpeedometerSpeedAggregator INSTANCE;
 
     private final long INITAL_START_TIME = 0;
 
@@ -20,15 +20,26 @@ class SpeedometerSpeedAggregator {
     private final AtomicLong globalTotalBytes = new AtomicLong(0);
     private final AtomicLong globalTotalRecords = new AtomicLong(0);
     private final AtomicLong previousLogReportTimeMillisec = new AtomicLong(INITAL_START_TIME);
+    private final String logFormat;
 
     // TODO: We can use google's library.
     private final List<SpeedometerSpeedController> controllerList = new ArrayList<>();
 
-    public static SpeedometerSpeedAggregator getInstance() {
-        return SpeedometerSpeedAggregatorHolder.INSTANCE;
+    public static SpeedometerSpeedAggregator getInstance(PluginTask task) {
+        synchronized (INSTANCE_LOCK) {
+            if (INSTANCE == null) {
+                INSTANCE = new SpeedometerSpeedAggregator(task != null && task.getLabel().isPresent() ? task.getLabel().get() : null);
+            }
+            return INSTANCE;
+        }
     }
 
-    public SpeedometerSpeedAggregator() {
+    SpeedometerSpeedAggregator() {
+        this(null);
+    }
+
+    SpeedometerSpeedAggregator(String label) {
+        logFormat = initLogFormat(label);
         showLogMessage(activeControllerCount.get(), 0, 0, 0, 0, 0);
     }
 
@@ -106,6 +117,10 @@ class SpeedometerSpeedAggregator {
         return copyList;
     }
 
+    String getLogFormat() {
+        return logFormat;
+    }
+
     private void renewPeriods() {
         for (SpeedometerSpeedController controller : getControllerList()) {
             controller.renewPeriod();
@@ -142,7 +157,7 @@ class SpeedometerSpeedAggregator {
     private void showLogMessage(int activeThreads, long totalBytes, long timeMilliSec, long bytesPerSec, long totalRecords, long recordsPerSec) {
         Logger logger = getLogger();
         if (logger != null) {
-            logger.info(String.format("{speedometer: {active: %d, total: %s, sec: %s, speed: %s/s, records: %s, record-speed: %s/s}}",
+            logger.info(String.format(logFormat,
                     activeThreads,
                     SpeedometerUtil.toByteText(totalBytes),
                     SpeedometerUtil.toTimeText(timeMilliSec),
@@ -150,5 +165,15 @@ class SpeedometerSpeedAggregator {
                     SpeedometerUtil.toDecimalText(totalRecords),
                     SpeedometerUtil.toDecimalText(recordsPerSec)));
         }
+    }
+
+    private String initLogFormat(String label) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{speedometer: {");
+        if (label != null && label.length() > 0) {
+            builder.append("label: ").append(label).append(", ");
+        }
+        builder.append("active: %d, total: %s, sec: %s, speed: %s/s, records: %s, record-speed: %s/s}}");
+        return builder.toString();
     }
 }

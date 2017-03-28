@@ -4,21 +4,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
 
+import org.embulk.filter.SpeedometerFilterPlugin.PluginTask;
 import org.embulk.spi.Exec;
 import org.junit.Test;
 import org.slf4j.Logger;
 
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
+import mockit.Verifications;
+
 public class TestSpeedometerSpeedAggregator {
     @Mocked SpeedometerSpeedController controller;
     @Mocked Exec exec;
+    @Mocked PluginTask task;
 
     @Test
     public void testGetInstance() {
-        assertNotNull("Verify there is a singleton.", SpeedometerSpeedAggregator.getInstance());
+        assertNotNull("Verify there is a singleton.", SpeedometerSpeedAggregator.getInstance(task));
     }
 
     @Test
@@ -26,6 +29,15 @@ public class TestSpeedometerSpeedAggregator {
         SpeedometerSpeedAggregator aggregator = new SpeedometerSpeedAggregator();
         assertEquals("Verify the default global start time is zero.", 0, aggregator.getGlobalStartTime());
         assertEquals("Verify the default active count is zero.", 0, aggregator.getActiveControllerCount());
+        assertEquals("{speedometer: {active: %d, total: %s, sec: %s, speed: %s/s, records: %s, record-speed: %s/s}}", aggregator.getLogFormat());
+    }
+
+    @Test
+    public void testSpeedometerSpeedAggregatorWithLabel() {
+        SpeedometerSpeedAggregator aggregator = new SpeedometerSpeedAggregator("foo");
+        assertEquals("Verify the default global start time is zero.", 0, aggregator.getGlobalStartTime());
+        assertEquals("Verify the default active count is zero.", 0, aggregator.getActiveControllerCount());
+        assertEquals("{speedometer: {label: foo, active: %d, total: %s, sec: %s, speed: %s/s, records: %s, record-speed: %s/s}}", aggregator.getLogFormat());
     }
 
     @Test

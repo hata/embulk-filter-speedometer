@@ -24,6 +24,8 @@ import org.embulk.spi.time.TimestampFormatter;
 import org.embulk.spi.util.Timestamps;
 import org.msgpack.value.Value;
 
+import com.google.common.base.Optional;
+
 public class SpeedometerFilterPlugin
         implements FilterPlugin
 {
@@ -58,7 +60,11 @@ public class SpeedometerFilterPlugin
 
         @Config("column_options")
         @ConfigDefault("{}")
-        Map<String, TimestampColumnOption> getColumnOptions();
+        public Map<String, TimestampColumnOption> getColumnOptions();
+
+        @Config("label")
+        @ConfigDefault("null")
+        public Optional<String> getLabel();
 
         @ConfigInject
         public BufferAllocator getBufferAllocator();
@@ -97,7 +103,7 @@ public class SpeedometerFilterPlugin
         private final PageBuilder pageBuilder;
 
         SpeedControlPageOutput(PluginTask task, Schema schema, PageOutput pageOutput) {
-            this.controller = new SpeedometerSpeedController(task, SpeedometerSpeedAggregator.getInstance());
+            this.controller = new SpeedometerSpeedController(task, SpeedometerSpeedAggregator.getInstance(task));
             this.schema = schema;
             this.allocator = task.getBufferAllocator();
             this.delimiterLength = task.getDelimiter().length();
