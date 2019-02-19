@@ -127,12 +127,12 @@ public class SpeedometerFilterPlugin
 
         @Override
         public void finish() {
+            controller.stop();
             pageBuilder.finish();
         }
 
         @Override
         public void close() {
-            controller.stop();
             pageBuilder.close();
             pageReader.close();
         }
