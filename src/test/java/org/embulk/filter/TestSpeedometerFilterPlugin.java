@@ -108,7 +108,6 @@ public class TestSpeedometerFilterPlugin
         new Verifications() {{
             taskSource.loadTask(PluginTask.class); times = 1;
             builder.close(); times = 1;
-            reader.close(); times = 1;
         }};
     }
 }
