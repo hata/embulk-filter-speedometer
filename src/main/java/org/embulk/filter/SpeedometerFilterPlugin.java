@@ -134,7 +134,6 @@ public class SpeedometerFilterPlugin
         @Override
         public void close() {
             pageBuilder.close();
-            pageReader.close();
         }
 
         class ColumnVisitorImpl implements ColumnVisitor {
