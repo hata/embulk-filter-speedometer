@@ -81,6 +81,8 @@ public class SpeedometerFilterPlugin
         PluginTask task = config.loadConfig(PluginTask.class);
         Schema outputSchema = inputSchema;
         control.run(task.dump(), outputSchema);
+        SpeedometerSpeedAggregator aggregator = SpeedometerSpeedAggregator.getInstance(task);
+        aggregator.showOverallMessage();
     }
 
     @Override
