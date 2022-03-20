@@ -145,7 +145,7 @@ class SpeedometerSpeedAggregator {
         showLogMessage(activeControllerCount.get(), currentTotalSize, timeDelta, currentBytesPerSec, currentTotalRecords, currentRecordsPerSec);
     }
 
-    public void showOverallMessage() {
+    private void showOverallMessage() {
         long timeDelta = System.currentTimeMillis() - globalStartTime.get();
         timeDelta = timeDelta > 0 ? timeDelta : 1;
         long bytesPerSec = (globalTotalBytes.get() * 1000) / timeDelta;
