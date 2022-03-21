@@ -81,8 +81,6 @@ public class SpeedometerFilterPlugin
         PluginTask task = config.loadConfig(PluginTask.class);
         Schema outputSchema = inputSchema;
         control.run(task.dump(), outputSchema);
-        SpeedometerSpeedAggregator aggregator = SpeedometerSpeedAggregator.getInstance(task);
-        aggregator.showOverallMessage();
     }
 
     @Override
@@ -113,6 +111,7 @@ public class SpeedometerFilterPlugin
             this.pageReader = new PageReader(schema);
             this.timestampFormatters = Timestamps.newTimestampColumnFormatters(task, schema, task.getColumnOptions());
             this.pageBuilder = new PageBuilder(allocator, schema, pageOutput);
+            this.controller.start(System.currentTimeMillis());
         }
 
         @Override
