@@ -111,6 +111,7 @@ public class SpeedometerFilterPlugin
             this.pageReader = new PageReader(schema);
             this.timestampFormatters = Timestamps.newTimestampColumnFormatters(task, schema, task.getColumnOptions());
             this.pageBuilder = new PageBuilder(allocator, schema, pageOutput);
+            this.controller.start(System.currentTimeMillis());
         }
 
         @Override
