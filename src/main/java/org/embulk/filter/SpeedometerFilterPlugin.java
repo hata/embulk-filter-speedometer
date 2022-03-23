@@ -111,6 +111,7 @@ public class SpeedometerFilterPlugin
             this.pageReader = new PageReader(schema);
             this.timestampFormatters = Timestamps.newTimestampColumnFormatters(task, schema, task.getColumnOptions());
             this.pageBuilder = new PageBuilder(allocator, schema, pageOutput);
+            this.controller.start(System.currentTimeMillis());
         }
 
         @Override
@@ -127,14 +128,13 @@ public class SpeedometerFilterPlugin
 
         @Override
         public void finish() {
+            controller.stop();
             pageBuilder.finish();
         }
 
         @Override
         public void close() {
-            controller.stop();
             pageBuilder.close();
-            pageReader.close();
         }
 
         class ColumnVisitorImpl implements ColumnVisitor {

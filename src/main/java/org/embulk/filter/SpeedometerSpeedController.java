@@ -25,6 +25,13 @@ class SpeedometerSpeedController {
         this.aggregator = aggregator;
     }
 
+    public void start(long nowTime) {
+        if (startTime == 0) {
+            startTime = nowTime;
+            aggregator.startController(this, startTime);
+        }
+    }
+
     public void stop() {
         startNewPeriod(0);
         aggregator.stopController(this);
