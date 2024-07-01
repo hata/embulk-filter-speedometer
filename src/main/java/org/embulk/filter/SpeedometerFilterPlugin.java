@@ -1,14 +1,18 @@
 package org.embulk.filter;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.validation.constraints.Min;
 
-import org.embulk.config.Config;
-import org.embulk.config.ConfigDefault;
-import org.embulk.config.ConfigInject;
+import org.embulk.util.config.Config;
+import org.embulk.util.config.ConfigDefault;
+import org.embulk.util.config.ConfigMapper;
+import org.embulk.util.config.ConfigMapperFactory;
 import org.embulk.config.ConfigSource;
-import org.embulk.config.Task;
+import org.embulk.util.config.Task;
+import org.embulk.util.config.TaskMapper;
 import org.embulk.config.TaskSource;
 import org.embulk.spi.BufferAllocator;
 import org.embulk.spi.Column;
@@ -19,12 +23,10 @@ import org.embulk.spi.PageBuilder;
 import org.embulk.spi.PageOutput;
 import org.embulk.spi.PageReader;
 import org.embulk.spi.Schema;
-import org.embulk.spi.time.Timestamp;
-import org.embulk.spi.time.TimestampFormatter;
-import org.embulk.spi.util.Timestamps;
-import org.msgpack.value.Value;
-
-import com.google.common.base.Optional;
+import org.embulk.spi.json.JsonValue;
+import org.embulk.spi.type.TimestampType;
+import org.embulk.spi.Exec;
+import org.embulk.util.timestamp.TimestampFormatter;
 
 public class SpeedometerFilterPlugin
         implements FilterPlugin
@@ -32,8 +34,7 @@ public class SpeedometerFilterPlugin
     private static final int TRUE_LENGTH = Boolean.toString(true).length();
     private static final int FALSE_LENGTH = Boolean.toString(false).length();
 
-    public interface PluginTask
-            extends Task,  TimestampFormatter.Task
+    public interface PluginTask extends Task
     {
         @Config("speed_limit")
         @ConfigDefault("0")
@@ -66,30 +67,62 @@ public class SpeedometerFilterPlugin
         @ConfigDefault("null")
         public Optional<String> getLabel();
 
-        @ConfigInject
-        public BufferAllocator getBufferAllocator();
+        // copy from org.embulk.spi.time.TimestampParser.Task
+        @Config("default_timezone")
+        @ConfigDefault("\"UTC\"")
+        public String getDefaultTimeZoneId();
+
+        // copy from org.embulk.spi.time.TimestampParser.Task
+        @Config("default_timestamp_format")
+        @ConfigDefault("\"%Y-%m-%d %H:%M:%S.%N %z\"")
+        public String getDefaultTimestampFormat();
+
+        // copy from org.embulk.spi.time.TimestampParser.Task
+        @Config("default_date")
+        @ConfigDefault("\"1970-01-01\"")
+        String getDefaultDate();
     }
 
-    public interface TimestampColumnOption extends Task,
-    TimestampFormatter.TimestampColumnOption
-    { }
+    private interface TimestampColumnOption extends org.embulk.util.config.Task {
+        @Config("timezone")
+        @ConfigDefault("null")
+        java.util.Optional<String> getTimeZoneId();
+
+        @Config("format")
+        @ConfigDefault("null")
+        java.util.Optional<String> getFormat();
+
+        @Config("date")
+        @ConfigDefault("null")
+        java.util.Optional<String> getDate();
+    }
+
+    private static final ConfigMapperFactory CONFIG_MAPPER_FACTORY = ConfigMapperFactory.builder().addDefaultModules().build();
 
     @Override
     public void transaction(ConfigSource config, Schema inputSchema,
             FilterPlugin.Control control)
     {
-        PluginTask task = config.loadConfig(PluginTask.class);
         Schema outputSchema = inputSchema;
-        control.run(task.dump(), outputSchema);
+        control.run(getTask(config).toTaskSource(), outputSchema);
     }
 
     @Override
     public PageOutput open(TaskSource taskSource, Schema inputSchema,
             Schema outputSchema, PageOutput output)
     {
-        PluginTask task = taskSource.loadTask(PluginTask.class);
-
+        final PluginTask task = getTask(taskSource);
         return new SpeedControlPageOutput(task, inputSchema, output);
+    }
+
+    PluginTask getTask(ConfigSource config) {
+        final ConfigMapper configMapper = CONFIG_MAPPER_FACTORY.createConfigMapper();
+        return configMapper.map(config, PluginTask.class);
+    }
+
+    PluginTask getTask(TaskSource taskSource) {
+        final TaskMapper taskMapper = CONFIG_MAPPER_FACTORY.createTaskMapper();
+        return taskMapper.map(taskSource, PluginTask.class);
     }
 
     static class SpeedControlPageOutput implements PageOutput {
@@ -105,13 +138,17 @@ public class SpeedometerFilterPlugin
         SpeedControlPageOutput(PluginTask task, Schema schema, PageOutput pageOutput) {
             this.controller = new SpeedometerSpeedController(task, SpeedometerSpeedAggregator.getInstance(task));
             this.schema = schema;
-            this.allocator = task.getBufferAllocator();
+            this.allocator = getBufferAllocator();
             this.delimiterLength = task.getDelimiter().length();
             this.recordPaddingSize = task.getRecordPaddingSize();
-            this.pageReader = new PageReader(schema);
-            this.timestampFormatters = Timestamps.newTimestampColumnFormatters(task, schema, task.getColumnOptions());
-            this.pageBuilder = new PageBuilder(allocator, schema, pageOutput);
+            this.pageReader = Exec.getPageReader(schema);
+            this.timestampFormatters = newTimestampColumnFormatters(task, schema, task.getColumnOptions());
+            this.pageBuilder = Exec.getPageBuilder(allocator, schema, pageOutput);
             this.controller.start(System.currentTimeMillis());
+        }
+
+        BufferAllocator getBufferAllocator() {
+            return Exec.getBufferAllocator();
         }
 
         @Override
@@ -135,6 +172,26 @@ public class SpeedometerFilterPlugin
         @Override
         public void close() {
             pageBuilder.close();
+        }
+
+        private static TimestampFormatter[] newTimestampColumnFormatters(
+            PluginTask task, Schema schema,
+            Map<String, ? extends TimestampColumnOption> columnOptions) {
+            TimestampFormatter[] formatters = new TimestampFormatter[schema.getColumnCount()];
+            int i = 0;
+            for (Column column : schema.getColumns()) {
+                if (column.getType() instanceof TimestampType) {
+                    final TimestampColumnOption columnOption = columnOptions.get(column.getName());
+
+                    formatters[i] = TimestampFormatter
+                        .builder(columnOption.getFormat().orElse(task.getDefaultTimestampFormat()), true)
+                        .setDefaultZoneFromString(columnOption.getTimeZoneId().orElse(task.getDefaultTimeZoneId()))
+                        .setDefaultDateFromString(columnOption.getDate().orElse(task.getDefaultDate()))
+                        .build();
+                }
+                i++;
+            }
+            return formatters;
         }
 
         class ColumnVisitorImpl implements ColumnVisitor {
@@ -191,7 +248,7 @@ public class SpeedometerFilterPlugin
                     speedMonitor(column);
                     pageBuilder.setNull(column);
                 } else {
-                    pageBuilder.setTimestamp(column, speedMonitor(column, pageReader.getTimestamp(column)));
+                    pageBuilder.setTimestamp(column, speedMonitor(column, pageReader.getTimestampInstant(column)));
                 }
             }
 
@@ -201,7 +258,7 @@ public class SpeedometerFilterPlugin
                     speedMonitor(column);
                     pageBuilder.setNull(column);
                 } else {
-                    pageBuilder.setJson(column, speedMonitor(column, pageReader.getJson(column)));
+                    pageBuilder.setJson(column, speedMonitor(column, pageReader.getJsonValue(column)));
                 }
             }
 
@@ -242,14 +299,14 @@ public class SpeedometerFilterPlugin
                 return s;
             }
 
-            private Timestamp speedMonitor(Column column, Timestamp t) {
+            private Instant speedMonitor(Column column, Instant t) {
                 speedMonitorForDelimiter(column);
                 TimestampFormatter formatter = timestampFormatters[column.getIndex()];
                 controller.checkSpeedLimit(startRecordTime, formatter.format(t).length());
                 return t;
             }
 
-            private Value speedMonitor(Column column, Value v) {
+            private JsonValue speedMonitor(Column column, JsonValue v) {
                 speedMonitorForDelimiter(column);
                 // NOTE: This may not be good for performance. But, I have no other idea.
                 String s = v.toJson();

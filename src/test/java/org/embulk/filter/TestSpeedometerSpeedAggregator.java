@@ -6,17 +6,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import org.embulk.filter.SpeedometerFilterPlugin.PluginTask;
-import org.embulk.spi.Exec;
 import org.junit.Test;
 import org.slf4j.Logger;
 
+import mockit.Expectations;
 import mockit.Mocked;
-import mockit.NonStrictExpectations;
 import mockit.Verifications;
 
 public class TestSpeedometerSpeedAggregator {
     @Mocked SpeedometerSpeedController controller;
-    @Mocked Exec exec;
     @Mocked PluginTask task;
 
     @Test
@@ -52,7 +50,7 @@ public class TestSpeedometerSpeedAggregator {
 
     @Test
     public void testStopController() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             controller.getTotalBytes(); result = 11;
             controller.getTotalRecords(); result = 5;
         }};
@@ -69,11 +67,11 @@ public class TestSpeedometerSpeedAggregator {
 
     @Test
     public void testStopControllerShowOverallMessage(@Mocked final Logger logger) {
-        new NonStrictExpectations() {{
-            Exec.getLogger(SpeedometerFilterPlugin.class); result = logger;
+        SpeedometerSpeedAggregator aggregator = new SpeedometerSpeedAggregator();
+        new Expectations(aggregator) {{
+            aggregator.getLogger(); result = logger;
         }};
 
-        SpeedometerSpeedAggregator aggregator = new SpeedometerSpeedAggregator();
         long nowTime = System.currentTimeMillis();
         aggregator.startController(controller, nowTime);
         aggregator.startController(controller, nowTime);
@@ -81,13 +79,13 @@ public class TestSpeedometerSpeedAggregator {
         aggregator.stopController(controller);
 
         new Verifications() {{
-            logger.info(withAny("Overall message.")); times = 2;
+            logger.info(withAny("Overall message.")); times = 1;
         }};
    }
 
     @Test
     public void testGetSpeedLimitForController() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             controller.getSpeedLimit(); result = 10;
         }};
 
