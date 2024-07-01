@@ -3,7 +3,7 @@ package org.embulk.filter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import mockit.Mocked;
-import mockit.NonStrictExpectations;
+import mockit.Expectations;
 import mockit.Verifications;
 
 import org.embulk.filter.SpeedometerFilterPlugin.PluginTask;
@@ -20,7 +20,7 @@ public class TestSpeedometerSpeedController {
 
     @Test
     public void testSpeedometerSpeedController() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             task.getSpeedLimit(); result = 1L;
             task.getMaxSleepMillisec(); result = 2;
             task.getLogIntervalSeconds(); result = 3;
@@ -51,7 +51,7 @@ public class TestSpeedometerSpeedController {
 
     @Test
     public void testGetTotalBytes() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             task.getSpeedLimit(); result = 1L;
             task.getMaxSleepMillisec(); result = 2;
             task.getLogIntervalSeconds(); result = 3;
@@ -69,7 +69,7 @@ public class TestSpeedometerSpeedController {
 
     @Test
     public void testGetPeriodBytesPerSec() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             task.getSpeedLimit(); result = 1L;
             task.getMaxSleepMillisec(); result = 2;
             task.getLogIntervalSeconds(); result = 3;
@@ -85,7 +85,7 @@ public class TestSpeedometerSpeedController {
 
     @Test
     public void testCheckSpeedLimit() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             task.getSpeedLimit(); result = 1L;
             task.getMaxSleepMillisec(); result = 2;
             task.getLogIntervalSeconds(); result = 3;
@@ -113,7 +113,7 @@ public class TestSpeedometerSpeedController {
 
     @Test
     public void testGetTotalRecords() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             task.getSpeedLimit(); result = 1L;
             task.getMaxSleepMillisec(); result = 2;
             task.getLogIntervalSeconds(); result = 3;
@@ -132,7 +132,7 @@ public class TestSpeedometerSpeedController {
 
     @Test
     public void testGetPeriodRecordsPerSec() {
-        new NonStrictExpectations() {{
+        new Expectations() {{
             task.getSpeedLimit(); result = 1L;
             task.getMaxSleepMillisec(); result = 2;
             task.getLogIntervalSeconds(); result = 3;

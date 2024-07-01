@@ -1,77 +1,68 @@
 plugins {
-    id "com.jfrog.bintray" version "1.1"
-    id "com.github.jruby-gradle.base" version "0.1.5"
     id "java"
+    id "maven-publish"
+    id "org.embulk.embulk-plugins" version "0.6.2"
 }
-import com.github.jrubygradle.JRubyExec
 
-apply from: 'https://raw.githubusercontent.com/hata/gradle-plugins/master/embulk-integration-test.gradle'
+// apply from: 'https://raw.githubusercontent.com/hata/gradle-plugins/master/embulk-integration-test.gradle'
+apply from: 'embulk-integration-test.gradle'
 
-sourceCompatibility = '1.7'
-targetCompatibility = '1.7'
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
 
 repositories {
     mavenCentral()
-    jcenter()
-}
-configurations {
-    provided
 }
 
-version = "0.3.5"
+version = "0.4.0"
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.8.0+"
-    compile  "org.msgpack:msgpack-core:0.7.1"
-    provided "org.embulk:embulk-core:0.8.0+"
-    // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
-    testCompile "org.jmockit:jmockit:1.15+"
-    testCompile "junit:junit:4.+"
+    // https://mvnrepository.com/artifact/org.embulk/embulk-api
+    compileOnly "org.embulk:embulk-api:0.10.43"
+    // https://dev.embulk.org/embulk-spi/
+    compileOnly "org.embulk:embulk-spi:0.10.43"
+    // https://dev.embulk.org/embulk-util-file/
+    compile "org.embulk:embulk-util-file:0.1.5"
+    // https://dev.embulk.org/embulk-util-config/
+    compile "org.embulk:embulk-util-config:0.3.4"
+    // https://dev.embulk.org/embulk-util-timestamp/
+    compile "org.embulk:embulk-util-timestamp:0.2.2"
+
+    testImplementation "org.embulk:embulk-api:0.10.43"
+    testImplementation "org.embulk:embulk-spi:0.10.43"
+    testImplementation "org.embulk:embulk-util-file:0.1.5"
+    testImplementation "org.embulk:embulk-util-timestamp:0.2.2"
+    testImplementation "org.jmockit:jmockit:1.15"
+    testImplementation "junit:junit:4.+"
 }
 
-task classpath(type: Copy, dependsOn: ["jar"]) {
-    doFirst { file("classpath").deleteDir() }
-    from (configurations.runtime - configurations.provided + files(jar.archivePath))
-    into "classpath"
-}
-clean { delete 'classpath' }
-
-task gem(type: JRubyExec, dependsOn: ["build", "gemspec", "classpath"]) {
-    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "build"
-    script "build/gemspec"
-    doLast { ant.move(file: "${project.name}-${project.version}.gem", todir: "pkg") }
+embulkPlugin {
+    mainClass = "org.embulk.filter.SpeedometerFilterPlugin"
+    category = "filter"
+    type = "speedometer"
 }
 
-task gemPush(type: JRubyExec, dependsOn: ["gem"]) {
-    jrubyArgs "-rrubygems/gem_runner", "-eGem::GemRunner.new.run(ARGV)", "push"
-    script "pkg/${project.name}-${project.version}.gem"
+gem {
+    authors = [ "hata" ]
+    email = ["hiroki.ata@gmail.com"]
+    summary = "Speedometer filter plugin for Embulk"
+    description = "Write log message of processed bytes and throughput periodically."
+    homepage = "https://github.com/hata/embulk-filter-speedometer"
+    licenses = ["MIT"]
 }
 
-task "package"(dependsOn: ["gemspec", "classpath"]) << {
-    println "> Build succeeded."
-    println "> You can run embulk with '-L ${file(".").absolutePath}' argument."
+gemPush {
+    host = "https://rubygems.org"
 }
 
-task gemspec << { file("build/gemspec").write($/
-Gem::Specification.new do |spec|
-  spec.name          = "${project.name}"
-  spec.version       = "${project.version}"
-  spec.authors       = ["hata"]
-  spec.summary       = %[Speedometer filter plugin for Embulk]
-  spec.description   = %[Write log message of processed bytes and throughput periodically.]
-  spec.email         = ["hiroki.ata@gmail.com"]
-  spec.licenses      = ["MIT"]
-  spec.homepage      = "https://github.com/hata/embulk-filter-speedometer"
+// To use integrationTest, run like this:
+// ./gradlew -DenableIntegrationTest=true clean all
 
-  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
-  spec.test_files    = spec.files.grep(%r"^(test|spec)/")
-  spec.require_paths = ["lib"]
+gem.dependsOn(check)
 
-  #spec.add_dependency 'YOUR_GEM_DEPENDENCY', ['~> YOUR_GEM_DEPENDENCY_VERSION']
-  spec.add_development_dependency 'bundler', ['~> 1.0']
-  spec.add_development_dependency 'rake', ['>= 10.0']
-end
-/$)
-}
+// integrationTest reference build/gemContents to run the tests.
+// So, it is required to depend on gem target to generate the contents.
+integrationTest.dependsOn(gem)
 
-project.tasks.integrationTest.dependsOn(classpath)
+task all(dependsOn: ["gem", "check", "integrationTest"])
+

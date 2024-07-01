@@ -1,7 +1,7 @@
 package org.embulk.filter;
 
+import mockit.Expectations;
 import mockit.Mocked;
-import mockit.NonStrictExpectations;
 import mockit.Verifications;
 
 import org.embulk.config.ConfigSource;
@@ -40,35 +40,43 @@ public class TestSpeedometerFilterPlugin
     @Mocked
     FilterPlugin.Control control;
 
+    @Mocked
+    PageReader reader;
+
+    @Mocked
+    PageBuilder builder;
+
+    @Mocked
+    Page page;
+
     @Test
     public void testTransaction() {
-        new NonStrictExpectations() {{
-            config.loadConfig(PluginTask.class); result = task;
+        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
+        new Expectations(plugin) {{
+            plugin.getTask(config); result = task;
         }};
 
-        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
         plugin.transaction(config, schema, control);
 
         new Verifications() {{
-            config.loadConfig(PluginTask.class); times = 1;
             control.run((TaskSource)any, schema); times = 1;
         }};
     }
 
     @Test
-    public void testOpen(final @Mocked PageReader reader, final @Mocked PageBuilder builder, final @Mocked Page page) throws Exception {
-        new NonStrictExpectations() {{
-            taskSource.loadTask(PluginTask.class); result = task;
+    public void testOpen() throws Exception {
+        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
+        new Expectations(plugin) {{
+            plugin.getTask(taskSource); result = task;
             task.getDelimiter(); result = "";
             reader.nextRecord(); result = true; result = false;
+            Exec.getPageReader(schema); result = reader;
         }};
 
-        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
         PageOutput output = plugin.open(taskSource, schema, schema, inPageOutput);
         output.add(page);
 
         new Verifications() {{
-            taskSource.loadTask(PluginTask.class); times = 1;
             builder.addRecord(); times = 1;
             builder.finish(); times = 0;
             reader.nextRecord(); times = 2;
@@ -78,35 +86,33 @@ public class TestSpeedometerFilterPlugin
     }
 
     @Test
-    public void testFinish(final @Mocked PageReader reader, final @Mocked PageBuilder builder, final @Mocked Page page) throws Exception {
-        new NonStrictExpectations() {{
-            taskSource.loadTask(PluginTask.class); result = task;
+    public void testFinish() throws Exception {
+        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
+        new Expectations(plugin) {{
+            plugin.getTask(taskSource); result = task;
             task.getDelimiter(); result = "";
         }};
 
-        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
         PageOutput output = plugin.open(taskSource, schema, schema, inPageOutput);
         output.finish();
 
         new Verifications() {{
-            taskSource.loadTask(PluginTask.class); times = 1;
             builder.finish(); times = 1;
         }};
     }
 
     @Test
-    public void testClose(final @Mocked PageReader reader, final @Mocked PageBuilder builder, final @Mocked Page page) throws Exception {
-        new NonStrictExpectations() {{
-            taskSource.loadTask(PluginTask.class); result = task;
+    public void testClose() throws Exception {
+        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
+        new Expectations(plugin) {{
+            plugin.getTask(taskSource); result = task;
             task.getDelimiter(); result = "";
         }};
 
-        SpeedometerFilterPlugin plugin = new SpeedometerFilterPlugin();
         PageOutput output = plugin.open(taskSource, schema, schema, inPageOutput);
         output.close();
 
         new Verifications() {{
-            taskSource.loadTask(PluginTask.class); times = 1;
             builder.close(); times = 1;
         }};
     }

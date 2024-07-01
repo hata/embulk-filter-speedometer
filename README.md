@@ -104,8 +104,12 @@ $ ./gradlew gem
 Build with integrationTest
 
 ```
-$ ./gradlew -DenableIntegrationTest=true gem
+$ ./gradlew -DenableIntegrationTest=true clean all
 ```
+
+## Versions
+
+This plugin version 0.4.0 or later can use with Embulk 0.11.
 
 
 ## Note
